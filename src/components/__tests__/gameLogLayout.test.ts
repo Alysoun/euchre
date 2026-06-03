@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { clampGameLogLayout } from '../gameLogLayout';
+import { clampGameLogLayout, maxGameLogHeight } from '../gameLogLayout';
 import { clampTrickLayout } from '../trickLayout';
 
 describe('clampGameLogLayout', () => {
@@ -27,6 +27,20 @@ describe('clampGameLogLayout', () => {
     });
 
     expect(result.height).toBeGreaterThanOrEqual(72);
+  });
+
+  it('keeps user-resized log dimensions outside layout edit mode', () => {
+    const layout = {
+      x: 8,
+      y: 72,
+      width: 358,
+      height: 724,
+      collapsed: false,
+    };
+    const clamped = clampGameLogLayout(layout, false);
+    expect(clamped.width).toBe(358);
+    expect(clamped.height).toBe(Math.min(724, maxGameLogHeight(false)));
+    expect(clamped.height).toBeGreaterThan(280);
   });
 });
 

@@ -1,5 +1,4 @@
 import {
-  MAX_GAME_LOG_HEIGHT_DESKTOP,
   MAX_GAME_LOG_WIDTH,
   MIN_GAME_LOG_HEIGHT,
   MIN_GAME_LOG_WIDTH,
@@ -54,18 +53,14 @@ export function defaultGameLogLayout(
   };
 }
 
-export function maxGameLogHeight(editing: boolean): number {
+export function maxGameLogHeight(_editing = false): number {
   const h = viewportHeight();
   const top = layoutEditLogTopInset();
-  if (editing) return Math.min(Math.floor(h * 0.85), h - top - 12);
-  return Math.min(MAX_GAME_LOG_HEIGHT_DESKTOP, h - 120);
+  return Math.min(Math.floor(h * 0.85), h - top - 12);
 }
 
-export function maxGameLogWidth(editing: boolean, viewportW = viewportWidth()): number {
-  const w = viewportW;
-  if (editing) return Math.min(MAX_GAME_LOG_WIDTH, w - 16);
-  if (w <= BREAKPOINT_PHONE) return Math.min(MAX_GAME_LOG_WIDTH, w - 16);
-  return Math.min(360, w - 16);
+export function maxGameLogWidth(_editing = false, viewportW = viewportWidth()): number {
+  return Math.min(MAX_GAME_LOG_WIDTH, viewportW - 16);
 }
 
 export function minGameLogHeight(editing: boolean, collapsed: boolean): number {

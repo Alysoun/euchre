@@ -14,7 +14,7 @@ import {
 } from '../game/sessionLogExport';
 import {
   gameLogDragBounds,
-  MAX_GAME_LOG_HEIGHT_DESKTOP,
+  maxGameLogHeight,
   MIN_GAME_LOG_HEIGHT,
   MIN_GAME_LOG_WIDTH,
   Z_LAYOUT_EDIT_TARGET,
@@ -31,7 +31,7 @@ const LogPanel = styled.div<{
   width: ${(p) => p.$width}px;
   height: ${(p) => (p.$collapsed ? 'auto' : `${p.$height}px`)};
   min-width: ${MIN_GAME_LOG_WIDTH}px;
-  max-width: ${(p) => (p.$editMode ? 'calc(100vw - 16px)' : '360px')};
+  max-width: ${(p) => (p.$editMode ? 'calc(100vw - 16px)' : `${p.$width}px`)};
   display: flex;
   flex-direction: column;
   background: rgba(0, 0, 0, 0.88);
@@ -206,6 +206,7 @@ const GameLog: React.FC = () => {
   if (state.phase === 'setup') return null;
 
   const logBounds = groupActive ? gameLogDragBounds() : undefined;
+  const playMaxHeight = Math.min(gameLogLayout.height, maxGameLogHeight(false));
 
   return (
     <Draggable
@@ -231,7 +232,7 @@ const GameLog: React.FC = () => {
           zIndex: groupActive ? Z_LAYOUT_EDIT_TARGET : layoutEditMode ? Z_SEAT_LABEL_DIMMED : 85,
           maxHeight: groupActive
             ? 'calc(100dvh - 64px)'
-            : `min(${MAX_GAME_LOG_HEIGHT_DESKTOP}px, calc(100dvh - 120px))`,
+            : `${playMaxHeight}px`,
         }}
       >
         <LogHeader>
