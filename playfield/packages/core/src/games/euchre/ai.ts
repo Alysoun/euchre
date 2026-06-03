@@ -7,6 +7,7 @@ import {
   applyDifficultyToPlay,
   pickDiscard,
   pickExpertPlay,
+  pickForcedNameTrump,
   shouldGoAlone,
   shouldGoAloneOnOrderUp,
   shouldNameTrump,
@@ -70,6 +71,17 @@ export function getAIAction(state: GameState): AIAction {
       type: 'BID',
       action: 'nameTrump',
       suit: pick.suit,
+      goAlone: alone || undefined,
+    };
+  }
+
+  if (state.phase === 'stickTheDealer' && player.id === state.dealerId) {
+    const suit = pickForcedNameTrump(player.cards, state.turnedCard?.suit ?? null);
+    const alone = shouldGoAlone(player.cards, suit, difficulty);
+    return {
+      type: 'BID',
+      action: 'nameTrump',
+      suit,
       goAlone: alone || undefined,
     };
   }

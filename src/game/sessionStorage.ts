@@ -20,6 +20,7 @@ function storage(): Storage | null {
 const RESUMABLE_PHASES = new Set<GameState['phase']>([
   'bidding',
   'biddingRound2',
+  'stickTheDealer',
   'dealerDiscard',
   'playing',
   'handSummary',

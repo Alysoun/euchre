@@ -145,7 +145,9 @@ function displaySuit(
   }
   if (
     state.turnedCard &&
-    (state.phase === 'bidding' || state.phase === 'biddingRound2')
+    (state.phase === 'bidding' ||
+      state.phase === 'biddingRound2' ||
+      state.phase === 'stickTheDealer')
   ) {
     return { suit: state.turnedCard.suit, label: 'Turned', sub: 'to order' };
   }

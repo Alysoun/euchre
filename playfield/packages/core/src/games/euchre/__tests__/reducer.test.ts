@@ -48,7 +48,7 @@ describe('euchre reducer', () => {
       if (!ai) break;
       state = gameReducer(state, aiActionToGameAction(ai));
     }
-    expect(['biddingRound2', 'dealerDiscard', 'playing', 'handSummary', 'gameOver']).toContain(
+    expect(['biddingRound2', 'stickTheDealer', 'dealerDiscard', 'playing', 'handSummary', 'gameOver']).toContain(
       state.phase
     );
   });
@@ -204,5 +204,62 @@ describe('euchre reducer', () => {
       card: createCard('diamonds', '10'),
     });
     expect(illegal.currentTrick).toHaveLength(1);
+  });
+
+  it('sticks the dealer instead of redealing when round 2 is all pass', () => {
+    let state = startAllAi();
+    state = {
+      ...state,
+      phase: 'biddingRound2',
+      biddingRound: 2,
+      dealerId: 2,
+      currentPlayer: 1,
+      passesThisRound: 3,
+      turnedCard: createCard('hearts', '9'),
+    };
+    state = gameReducer(state, { type: 'BID', action: 'pass' });
+    expect(state.phase).toBe('stickTheDealer');
+    expect(state.currentPlayer).toBe(2);
+    expect(state.roundNumber).toBe(1);
+    expect(state.players[0].cards).toHaveLength(5);
+    expect(state.log.some((e) => e.message.includes('Stick the dealer'))).toBe(true);
+  });
+
+  it('rejects pass while stuck and lets dealer name trump', () => {
+    let state = startAllAi();
+    state = {
+      ...state,
+      phase: 'stickTheDealer',
+      biddingRound: 2,
+      dealerId: 0,
+      currentPlayer: 0,
+      turnedCard: createCard('hearts', '9'),
+      players: state.players.map((p, i) =>
+        i === 0
+          ? {
+              ...p,
+              cards: [
+                createCard('clubs', 'J'),
+                createCard('spades', 'J'),
+                createCard('clubs', 'A'),
+                createCard('clubs', 'K'),
+                createCard('diamonds', '9'),
+              ],
+            }
+          : p
+      ),
+    };
+    const stillStuck = gameReducer(state, { type: 'BID', action: 'pass' });
+    expect(stillStuck.phase).toBe('stickTheDealer');
+
+    const named = gameReducer(state, {
+      type: 'BID',
+      action: 'nameTrump',
+      suit: 'clubs',
+    });
+    expect(named.phase).toBe('playing');
+    expect(named.trump).toBe('clubs');
+    expect(named.trumpCallerId).toBe(0);
+    expect(named.log.some((e) => e.message.includes('stick the dealer'))).toBe(true);
   });
 });

@@ -132,12 +132,26 @@ const EuchreActionBar: React.FC = () => {
     );
   }
 
-  if (state.phase === 'biddingRound2') {
+  if (state.phase === 'biddingRound2' || state.phase === 'stickTheDealer') {
     const turned = state.turnedCard?.suit;
+    const stuck = state.phase === 'stickTheDealer';
+    const isDealer = human.id === state.dealerId;
+    if (stuck && !isDealer) {
+      return (
+        <div>
+          <PhaseTitle>{phaseLabel}</PhaseTitle>
+          <WaitNote>Dealer must name trump — stick the dealer.</WaitNote>
+        </div>
+      );
+    }
     return (
       <div>
         <PhaseTitle>{phaseLabel}</PhaseTitle>
-        <Hint>Name trump (not the turned color), go alone, or pass.</Hint>
+        <Hint>
+          {stuck
+            ? 'You must name trump — no pass (stick the dealer).'
+            : 'Name trump (not the turned color), go alone, or pass.'}
+        </Hint>
         <Bar>
           {SUITS.filter((suit) => suit !== turned).map((suit) => (
             <Btn
@@ -159,9 +173,11 @@ const EuchreActionBar: React.FC = () => {
               Alone {SUIT_SYMBOL[suit]}
             </Btn>
           ))}
-          <Btn type="button" onClick={click(() => dispatch({ type: 'BID', action: 'pass' }))}>
-            Pass
-          </Btn>
+          {!stuck && (
+            <Btn type="button" onClick={click(() => dispatch({ type: 'BID', action: 'pass' }))}>
+              Pass
+            </Btn>
+          )}
         </Bar>
       </div>
     );

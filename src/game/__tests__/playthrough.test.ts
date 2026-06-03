@@ -5,6 +5,7 @@ import {
   getAIAction,
   aiActionToGameAction,
   getLegalPlays,
+  pickForcedNameTrump,
   PLAYER_COUNT,
 } from '@playfield/core/euchre';
 
@@ -52,7 +53,7 @@ describe('solo playthrough', () => {
         state = gameReducer(state, aiActionToGameAction(ai));
       }
     }
-    expect(['biddingRound2', 'dealerDiscard', 'playing', 'handSummary']).toContain(
+    expect(['biddingRound2', 'stickTheDealer', 'dealerDiscard', 'playing', 'handSummary']).toContain(
       state.phase
     );
   });
@@ -82,6 +83,9 @@ describe('solo playthrough', () => {
           state = gameReducer(state, { type: 'BID', action: 'pass' });
         } else if (state.phase === 'biddingRound2') {
           state = gameReducer(state, { type: 'BID', action: 'pass' });
+        } else if (state.phase === 'stickTheDealer' && you.id === state.dealerId) {
+          const suit = pickForcedNameTrump(you.cards, state.turnedCard?.suit ?? null);
+          state = gameReducer(state, { type: 'BID', action: 'nameTrump', suit });
         } else if (state.phase === 'dealerDiscard' && you.id === state.dealerId) {
           state = gameReducer(state, {
             type: 'DEALER_DISCARD',

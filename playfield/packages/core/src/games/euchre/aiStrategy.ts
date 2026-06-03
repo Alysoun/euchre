@@ -78,6 +78,13 @@ export function shouldNameTrump(
   return { suit: best.suit };
 }
 
+/** Dealer must name trump — pick the strongest eligible suit (no pass). */
+export function pickForcedNameTrump(hand: Card[], turnedSuit: Suit | null): Suit {
+  const best = bestNameTrumpSuit(hand, turnedSuit);
+  if (best) return best.suit;
+  return SUITS.find((suit) => suit !== turnedSuit) ?? SUITS[0];
+}
+
 /** Lone hands need both bowers or a near-march trump stack — not just a decent call. */
 export function shouldGoAlone(
   hand: Card[],

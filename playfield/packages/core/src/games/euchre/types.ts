@@ -29,6 +29,7 @@ export type GamePhase =
   | 'setup'
   | 'bidding'
   | 'biddingRound2'
+  | 'stickTheDealer'
   | 'dealerDiscard'
   | 'playing'
   | 'handSummary'

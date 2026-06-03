@@ -12,6 +12,7 @@ export const PHASE_LABELS: Record<string, string> = {
   setup: 'Setup',
   bidding: 'Bidding — order up?',
   biddingRound2: 'Bidding — name trump',
+  stickTheDealer: 'Stick the dealer — name trump',
   dealerDiscard: 'Dealer discard',
   playing: 'Trick play',
   handSummary: 'Hand complete',

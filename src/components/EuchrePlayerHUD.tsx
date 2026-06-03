@@ -142,7 +142,7 @@ const EuchrePlayerHUD: React.FC = () => {
     return new Set(legal.map((c) => c.id));
   }, [human.cards, state.phase, state.trump, state.currentTrick, state.leadSuit]);
 
-  const handPhases = ['bidding', 'biddingRound2', 'dealerDiscard', 'playing'] as const;
+  const handPhases = ['bidding', 'biddingRound2', 'stickTheDealer', 'dealerDiscard', 'playing'] as const;
   const showFan =
     human.cards.length > 0 &&
     (handPhases as readonly string[]).includes(state.phase);

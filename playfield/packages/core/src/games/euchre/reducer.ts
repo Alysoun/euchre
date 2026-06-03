@@ -155,13 +155,20 @@ function beginRound2(state: GameState): GameState {
   );
 }
 
-function redeal(state: GameState): GameState {
-  const dealerId = nextDealer(state.dealerId);
-  return dealNewHand({
-    ...state,
-    dealerId,
-    roundNumber: state.roundNumber + 1,
-  });
+function stickTheDealer(state: GameState): GameState {
+  return appendLog(
+    {
+      ...state,
+      phase: 'stickTheDealer',
+      currentPlayer: state.dealerId,
+      passesThisRound: 0,
+    },
+    log('Stick the dealer — dealer must name trump', 'info')
+  );
+}
+
+function isEligibleNameTrumpSuit(state: GameState, suit: Suit): boolean {
+  return suit !== state.turnedCard?.suit;
 }
 
 function orderUp(state: GameState, callerId: number, goAlone: boolean): GameState {
@@ -202,6 +209,7 @@ function nameTrump(
 ): GameState {
   const alone = goAlone;
   const lonerId = alone ? callerId : null;
+  const stuck = state.phase === 'stickTheDealer';
   return appendLog(
     {
       ...state,
@@ -221,9 +229,11 @@ function nameTrump(
       currentTrick: [],
     },
     log(
-      alone
-        ? `${playerName(state, callerId)} names ${SUIT_SYMBOL[suit]} trump — going alone`
-        : `${playerName(state, callerId)} names ${SUIT_SYMBOL[suit]} trump`,
+      stuck
+        ? `${playerName(state, callerId)} names ${SUIT_SYMBOL[suit]} trump — stick the dealer`
+        : alone
+          ? `${playerName(state, callerId)} names ${SUIT_SYMBOL[suit]} trump — going alone`
+          : `${playerName(state, callerId)} names ${SUIT_SYMBOL[suit]} trump`,
       'success'
     )
   );
@@ -327,6 +337,7 @@ function handleBid(
   if (!player) return state;
 
   if (action === 'pass') {
+    if (state.phase === 'stickTheDealer') return state;
     const passesThisRound = state.passesThisRound + 1;
     let next = appendLog(
       { ...state, passesThisRound },
@@ -338,7 +349,7 @@ function handleBid(
     if (next.biddingRound === 1) {
       return beginRound2(next);
     }
-    return redeal(next);
+    return stickTheDealer(next);
   }
 
   if (action === 'orderUp') {
@@ -347,7 +358,12 @@ function handleBid(
   }
 
   if (action === 'nameTrump') {
-    if (state.phase !== 'biddingRound2' || !suit) return state;
+    if (!suit || !isEligibleNameTrumpSuit(state, suit)) return state;
+    if (state.phase === 'stickTheDealer') {
+      if (player.id !== state.dealerId) return state;
+      return nameTrump(state, player.id, suit, Boolean(goAlone));
+    }
+    if (state.phase !== 'biddingRound2') return state;
     return nameTrump(state, player.id, suit, Boolean(goAlone));
   }
 

@@ -139,7 +139,9 @@ const TrickCenter: React.FC = () => {
 
   const showTurned =
     state.turnedCard &&
-    (state.phase === 'bidding' || state.phase === 'biddingRound2') &&
+    (state.phase === 'bidding' ||
+      state.phase === 'biddingRound2' ||
+      state.phase === 'stickTheDealer') &&
     pause.kind !== 'dealing';
 
   const lastKey = lastRevealPlay
