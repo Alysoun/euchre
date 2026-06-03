@@ -1,0 +1,97 @@
+import React, { useCallback } from 'react';
+import { useGame } from '../context/GameContext';
+import { EuchreAIDifficulty, SeatConfig } from '../types/GameTypes';
+import PlayerSelect from './PlayerSelect';
+import EuchreScoreboard from './EuchreScoreboard';
+import EuchrePlayerHUD from './EuchrePlayerHUD';
+import TrickCenter from './TrickCenter';
+import HandSummaryModal from './HandSummaryModal';
+import GameLog from './GameLog';
+import LeaveTableButton from './LeaveTableButton';
+import EuchreTableControls from './EuchreTableControls';
+import LayoutEditOverlay from './LayoutEditOverlay';
+import TrumpSuitPill from './TrumpSuitPill';
+import SeatLabels from './SeatLabels';
+import SeatAnchors from './SeatAnchors';
+import { useAITurn } from '../hooks/useAITurn';
+import { useGameSounds } from '../hooks/useGameSounds';
+import { GlobalStyle } from '../styles/GlobalStyle';
+import { PHASE_LABELS } from '@playfield/core/euchre';
+import {
+  PhaseBanner,
+  SetupOverlay,
+  TableContainer,
+  TableFelt,
+  TableRail,
+  TableSceneWrap,
+  TableShadow,
+  TableStack,
+  TableSurface,
+} from './table/TableScene';
+
+const GameTable: React.FC = () => {
+  const { state, dispatch } = useGame();
+  useAITurn();
+  useGameSounds();
+
+  const isGameStarted = state.players.length > 0;
+
+  const handleStart = useCallback(
+    (seats: SeatConfig[], aiDifficulty: EuchreAIDifficulty) => {
+      dispatch({ type: 'START_GAME', seats, aiDifficulty });
+    },
+    [dispatch]
+  );
+
+  return (
+    <TableContainer>
+      <GlobalStyle />
+      <EuchreScoreboard />
+      {isGameStarted &&
+        state.phase !== 'playing' &&
+        state.phase !== 'gameOver' && (
+          <PhaseBanner>{PHASE_LABELS[state.phase] ?? state.phase}</PhaseBanner>
+        )}
+      <GameLog />
+      <TrumpSuitPill />
+      <EuchreTableControls />
+      <LayoutEditOverlay />
+      <LeaveTableButton />
+      <HandSummaryModal />
+
+      <TableSceneWrap>
+        <TableShadow aria-hidden />
+        <TableStack>
+          <TableSurface>
+            <TableRail aria-hidden />
+            <TableFelt>
+              {isGameStarted && <SeatAnchors totalPlayers={state.players.length} />}
+              <TrickCenter />
+            </TableFelt>
+          </TableSurface>
+        </TableStack>
+      </TableSceneWrap>
+
+      {isGameStarted && (
+        <SeatLabels
+          players={state.players}
+          dealerId={state.dealerId}
+          currentPlayer={state.currentPlayer}
+          trumpCallerId={state.trumpCallerId}
+          trumpCallKind={state.trumpCallKind}
+          goAlone={state.goAlone}
+        />
+      )}
+
+      {isGameStarted && <EuchrePlayerHUD />}
+
+      {!isGameStarted && (
+        <SetupOverlay>
+          <PlayerSelect onStart={handleStart} />
+        </SetupOverlay>
+      )}
+    </TableContainer>
+  );
+};
+
+export default GameTable;
