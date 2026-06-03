@@ -103,20 +103,40 @@ const SeatDot = styled.div<{ $pos: 'bottom' | 'left' | 'top' | 'right'; $you?: b
   }}
 `;
 
-const DifficultySelect = styled.select`
-  width: 100%;
-  padding: 0.65rem 0.75rem;
-  border-radius: 10px;
-  border: 1px solid rgba(255, 215, 0, 0.35);
-  background: rgba(255, 255, 255, 0.08);
-  color: white;
-  font-size: 0.95rem;
+/** Native <select> option lists use OS styling (white box on Windows) — use buttons instead. */
+const DifficultyRow = styled.div`
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
   margin-bottom: 0.45rem;
-  cursor: pointer;
+`;
 
-  &:focus {
-    outline: 2px solid rgba(255, 215, 0, 0.5);
-    outline-offset: 1px;
+const DifficultyBtn = styled.button<{ $active: boolean }>`
+  padding: 0.62rem 0.5rem;
+  border-radius: 10px;
+  border: 1px solid ${(p) => (p.$active ? '#ffd700' : 'rgba(255, 215, 0, 0.35)')};
+  background: ${(p) =>
+    p.$active
+      ? 'linear-gradient(180deg, rgba(255, 229, 102, 0.28) 0%, rgba(255, 215, 0, 0.12) 100%)'
+      : 'rgba(255, 255, 255, 0.06)'};
+  color: ${(p) => (p.$active ? '#ffec8b' : 'rgba(255, 255, 255, 0.92)')};
+  font-size: 0.9rem;
+  font-weight: ${(p) => (p.$active ? 700 : 500)};
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease;
+
+  &:hover {
+    border-color: rgba(255, 215, 0, 0.65);
+    ${(p) =>
+      !p.$active &&
+      `
+      background: rgba(255, 255, 255, 0.1);
+    `}
+  }
+
+  &:focus-visible {
+    outline: 2px solid rgba(255, 215, 0, 0.55);
+    outline-offset: 2px;
   }
 `;
 
@@ -192,18 +212,21 @@ const PlayerSelect: React.FC<PlayerSelectProps> = ({ onStart }) => {
         maxLength={24}
         autoComplete="nickname"
       />
-      <Label htmlFor="ai-difficulty">Computer players</Label>
-      <DifficultySelect
-        id="ai-difficulty"
-        value={aiDifficulty}
-        onChange={(e) => setAiDifficulty(e.target.value as EuchreAIDifficulty)}
-      >
+      <Label id="ai-difficulty-label">Computer players</Label>
+      <DifficultyRow role="radiogroup" aria-labelledby="ai-difficulty-label">
         {EUCHRE_AI_DIFFICULTY_ORDER.map((tier) => (
-          <option key={tier} value={tier}>
+          <DifficultyBtn
+            key={tier}
+            type="button"
+            role="radio"
+            aria-checked={aiDifficulty === tier}
+            $active={aiDifficulty === tier}
+            onClick={() => setAiDifficulty(tier)}
+          >
             {EUCHRE_AI_DIFFICULTY_LABELS[tier]}
-          </option>
+          </DifficultyBtn>
         ))}
-      </DifficultySelect>
+      </DifficultyRow>
       <DifficultyHint>{EUCHRE_AI_DIFFICULTY_HINTS[aiDifficulty]}</DifficultyHint>
       <StartButton type="button" onClick={handleStart}>
         Deal me in
