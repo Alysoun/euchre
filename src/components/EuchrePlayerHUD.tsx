@@ -55,6 +55,7 @@ const DockAnchor = styled.div<{ $dx: number; $dy: number; $z: number }>`
 
 const Dock = styled.div<{ $editMode?: boolean; $dimmed?: boolean }>`
   padding: 12px 14px 14px;
+  overflow: visible;
   ${dockFrame}
 `;
 
@@ -72,9 +73,11 @@ const Meta = styled.div`
 
 const FanBlock = styled.div<{ $scale: number }>`
   margin: 4px 0 8px;
-  min-height: ${(p) => Math.round(118 * p.$scale)}px;
+  min-height: ${(p) => Math.round(138 * p.$scale)}px;
+  padding-bottom: ${(p) => Math.round(10 * p.$scale)}px;
   transform: scale(${(p) => p.$scale});
   transform-origin: center bottom;
+  overflow: visible;
 `;
 
 const ActionsBlock = styled.div`

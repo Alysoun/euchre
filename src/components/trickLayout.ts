@@ -4,10 +4,10 @@ export const TRICK_CENTER_LEFT_PCT = 50;
 
 /** Base fan offsets (px) — multiplied by `spread` from stored layout. */
 export const TRICK_FAN_BASE: Record<number, { dx: number; dy: number }> = {
-  0: { dx: 0, dy: 72 },
-  1: { dx: -88, dy: 12 },
-  2: { dx: 0, dy: -64 },
-  3: { dx: 88, dy: 12 },
+  0: { dx: 0, dy: 48 },
+  1: { dx: -88, dy: 8 },
+  2: { dx: 0, dy: -72 },
+  3: { dx: 88, dy: 8 },
 };
 
 export const BASE_TRICK_CARD_PX = 64;
@@ -41,7 +41,7 @@ function migrateTiltAdjust(tiltAdjust: number | undefined): number | undefined {
 export function defaultTrickLayout(): TrickLayout {
   return {
     offsetX: 0,
-    offsetY: 12,
+    offsetY: 28,
     spread: 1,
     cardScale: 1,
     facePlayer: 100,

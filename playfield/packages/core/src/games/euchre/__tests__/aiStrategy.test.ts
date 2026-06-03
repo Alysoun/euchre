@@ -3,6 +3,7 @@ import { createCard } from '../cards';
 import { trickLeader } from '../trickPlay';
 import {
   pickExpertPlay,
+  shouldGoAlone,
   shouldOrderUp,
   trumpHandScore,
 } from '../aiStrategy';
@@ -62,5 +63,27 @@ describe('aiStrategy', () => {
       { playerId: 1, card: createCard('hearts', 'J') },
     ];
     expect(trickLeader(trick, trump, 'hearts').playerId).toBe(1);
+  });
+
+  it('only goes alone on near-march hands at hard difficulty', () => {
+    const trump = 'diamonds' as const;
+    const decent = [
+      createCard('diamonds', 'A'),
+      createCard('diamonds', 'K'),
+      createCard('diamonds', '10'),
+      createCard('clubs', '9'),
+      createCard('spades', '9'),
+    ];
+    expect(shouldGoAlone(decent, trump, 'hard')).toBe(false);
+
+    const march = [
+      createCard('diamonds', 'J'),
+      createCard('clubs', 'J'),
+      createCard('diamonds', 'A'),
+      createCard('diamonds', 'K'),
+      createCard('diamonds', '10'),
+    ];
+    expect(trumpHandScore(march, trump)).toBeGreaterThan(10);
+    expect(shouldGoAlone(march, trump, 'hard')).toBe(true);
   });
 });

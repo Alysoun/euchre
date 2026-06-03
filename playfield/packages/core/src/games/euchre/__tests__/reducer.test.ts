@@ -100,6 +100,61 @@ describe('euchre reducer', () => {
     expect(next).toBe(state);
   });
 
+  it('starts trick play with seat left of dealer, not one seat further', () => {
+    let state = startAllAi();
+    const dealerHand = [
+      createCard('diamonds', 'A'),
+      createCard('diamonds', 'K'),
+      createCard('clubs', '9'),
+      createCard('spades', '9'),
+      createCard('hearts', '9'),
+      createCard('diamonds', '10'),
+    ];
+    state = {
+      ...state,
+      dealerId: 0,
+      phase: 'dealerDiscard',
+      trump: 'diamonds',
+      currentPlayer: 0,
+      goAlone: false,
+      lonerId: null,
+      players: state.players.map((p, i) =>
+        i === 0 ? { ...p, cards: dealerHand } : p
+      ),
+    };
+    state = gameReducer(state, { type: 'DEALER_DISCARD', card: dealerHand[5] });
+    expect(state.phase).toBe('playing');
+    expect(state.currentPlayer).toBe(1);
+  });
+
+  it('lets the loner lead when going alone after dealer discard', () => {
+    let state = startAllAi();
+    const dealerHand = [
+      createCard('diamonds', 'A'),
+      createCard('diamonds', 'K'),
+      createCard('clubs', '9'),
+      createCard('spades', '9'),
+      createCard('hearts', '9'),
+      createCard('diamonds', '10'),
+    ];
+    state = {
+      ...state,
+      dealerId: 0,
+      phase: 'dealerDiscard',
+      trump: 'diamonds',
+      goAlone: true,
+      lonerId: 1,
+      makerTeam: 1,
+      currentPlayer: 0,
+      players: state.players.map((p, i) =>
+        i === 0 ? { ...p, cards: dealerHand } : p
+      ),
+    };
+    state = gameReducer(state, { type: 'DEALER_DISCARD', card: dealerHand[5] });
+    expect(state.phase).toBe('playing');
+    expect(state.currentPlayer).toBe(1);
+  });
+
   it('completes a three-card trick when going alone', () => {
     let state = startAllAi();
     state = {

@@ -7,7 +7,7 @@ export const FELT_CARD_AESTHETIC_ROTATE_X = -(tableTiltDeg - 8);
 
 export const FELT_CARD_ROTATE_X = `${FELT_CARD_AESTHETIC_ROTATE_X}deg`;
 
-export const FELT_CARD_LIFT_Z = '56px';
+export const FELT_CARD_LIFT_Z = '88px';
 
 export const FELT_CARD_ORIGIN = '50% 92%';
 
@@ -34,7 +34,7 @@ export function trickCardTransformOrigin(facePlayer = 100): string {
 
 export function trickCardLiftZ(facePlayer = 100): string {
   const baseLift = parseFloat(FELT_CARD_LIFT_Z);
-  const extra = facePlayerT(facePlayer) * 28;
+  const extra = facePlayerT(facePlayer) * 36;
   return `${Math.round(baseLift + extra)}px`;
 }
 

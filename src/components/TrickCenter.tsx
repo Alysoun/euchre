@@ -29,7 +29,7 @@ const TrickLayer = styled.div<{ $editMode?: boolean; $dimmed?: boolean }>`
   position: absolute;
   inset: -8%;
   pointer-events: ${(p) => (p.$editMode ? 'auto' : 'none')};
-  transform: translateZ(18px);
+  transform: translateZ(40px);
   transform-style: preserve-3d;
   opacity: ${(p) => (p.$dimmed ? 0.35 : 1)};
   transition: opacity 0.15s ease;
@@ -68,7 +68,7 @@ const CardSlot = styled.div<{
   position: absolute;
   left: 0;
   top: 0;
-  transform: translate(calc(-50% + ${(p) => p.$dx}px), calc(-50% + ${(p) => p.$dy}px));
+  transform: translate3d(calc(-50% + ${(p) => p.$dx}px), calc(-50% + ${(p) => p.$dy}px), 16px);
   transform-style: preserve-3d;
   z-index: ${(p) => (p.$highlight ? 14 : 8 + p.$stackIndex)};
   opacity: ${(p) => (p.$preview ? 0.72 : 1)};
@@ -99,7 +99,7 @@ const TurnedSpot = styled(motion.div)`
   position: absolute;
   left: 0;
   top: -80px;
-  transform: translate(-50%, -50%) translateZ(18px);
+  transform: translate(-50%, -50%) translate3d(0, 0, 40px);
   transform-style: preserve-3d;
   text-align: center;
   z-index: 8;

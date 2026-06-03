@@ -6,6 +6,7 @@ import {
 import { CARDS_PER_HAND, PLAYER_COUNT, WINNING_SCORE, SUIT_SYMBOL } from './constants';
 import {
   leftOfDealer,
+  firstLeader,
   nextActivePlayer,
   nextDealer,
   nextPlayer,
@@ -196,7 +197,8 @@ function nameTrump(
   goAlone: boolean
 ): GameState {
   const alone = goAlone;
-  let next = appendLog(
+  const lonerId = alone ? callerId : null;
+  return appendLog(
     {
       ...state,
       trump: suit,
@@ -204,9 +206,13 @@ function nameTrump(
       trumpCallerId: callerId,
       trumpCallKind: 'nameTrump',
       goAlone: alone,
-      lonerId: alone ? callerId : null,
+      lonerId,
       phase: 'playing',
-      currentPlayer: leftOfDealer(state.dealerId),
+      currentPlayer: firstLeader({
+        dealerId: state.dealerId,
+        goAlone: alone,
+        lonerId,
+      }),
       leadSuit: null,
       currentTrick: [],
     },
@@ -217,26 +223,15 @@ function nameTrump(
       'success'
     )
   );
-  if (alone) {
-    next = {
-      ...next,
-      currentPlayer: nextActivePlayer(next.currentPlayer, next),
-    };
-  }
-  return next;
 }
 
 function startPlayingAfterDiscard(state: GameState): GameState {
-  const next = {
-    ...state,
-    phase: 'playing' as const,
-    currentPlayer: leftOfDealer(state.dealerId),
-    leadSuit: null,
-    currentTrick: [] as GameState['currentTrick'],
-  };
   return {
-    ...next,
-    currentPlayer: nextActivePlayer(next.currentPlayer, next),
+    ...state,
+    phase: 'playing',
+    currentPlayer: firstLeader(state),
+    leadSuit: null,
+    currentTrick: [],
   };
 }
 

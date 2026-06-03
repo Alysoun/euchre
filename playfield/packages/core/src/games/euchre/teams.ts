@@ -34,6 +34,22 @@ export function leftOfDealer(dealerId: number): number {
   return nextPlayer(dealerId);
 }
 
+/** Seat to lead the first trick — left of dealer, skipping a lone partner if they would lead. */
+export function firstLeader(state: {
+  dealerId: number;
+  goAlone: boolean;
+  lonerId: number | null;
+}): number {
+  let p = leftOfDealer(state.dealerId);
+  if (state.goAlone && state.lonerId !== null) {
+    const sitOut = partnerId(state.lonerId);
+    while (p === sitOut) {
+      p = nextPlayer(p);
+    }
+  }
+  return p;
+}
+
 export function nextDealer(dealerId: number): number {
   return nextPlayer(dealerId);
 }

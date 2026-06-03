@@ -28,6 +28,10 @@ function turnedSuitTrumpScore(hand: Card[], turnedSuit: Suit): number {
   return trumpHandScore(hand, turnedSuit);
 }
 
+function trumpCount(hand: Card[], trump: Suit): number {
+  return hand.filter((c) => effectiveSuit(c, trump) === trump).length;
+}
+
 export function bestNameTrumpSuit(
   hand: Card[],
   excludeSuit: Suit | null
@@ -45,20 +49,14 @@ export function bestNameTrumpSuit(
 
 const ORDER_THRESHOLDS: Record<EuchreAIDifficulty, number> = {
   easy: 3.5,
-  medium: 4.5,
-  hard: 5.5,
+  medium: 4.75,
+  hard: 6,
 };
 
 const NAME_THRESHOLDS: Record<EuchreAIDifficulty, number> = {
   easy: 3,
-  medium: 4,
-  hard: 5,
-};
-
-const LONE_THRESHOLDS: Record<EuchreAIDifficulty, number> = {
-  easy: 99,
-  medium: 99,
-  hard: 8.5,
+  medium: 4.25,
+  hard: 5.25,
 };
 
 export function shouldOrderUp(
@@ -80,13 +78,22 @@ export function shouldNameTrump(
   return { suit: best.suit };
 }
 
+/** Lone hands need both bowers or a near-march trump stack — not just a decent call. */
 export function shouldGoAlone(
   hand: Card[],
   trump: Suit,
   difficulty: EuchreAIDifficulty
 ): boolean {
   if (difficulty !== 'hard') return false;
-  return trumpHandScore(hand, trump) >= LONE_THRESHOLDS[difficulty];
+  const score = trumpHandScore(hand, trump);
+  const hasRight = hand.some((c) => isRightBower(c, trump));
+  const hasLeft = hand.some((c) => isLeftBower(c, trump));
+  const trumps = trumpCount(hand, trump);
+
+  if (hasRight && hasLeft && trumps >= 4 && score >= 11) return true;
+  if (hasRight && hasLeft && score >= 10.5) return true;
+  if (hasRight && trumps >= 3 && score >= 11.5) return true;
+  return false;
 }
 
 export function pickDiscard(hand: Card[], trump: Suit): Card {
@@ -129,6 +136,16 @@ function pickLead(hand: Card[], trump: Suit, state: GameState, playerId: number)
   const trumps = hand.filter((c) => effectiveSuit(c, trump) === trump);
   const offTrump = hand.filter((c) => effectiveSuit(c, trump) !== trump);
 
+  if (state.goAlone && state.lonerId === playerId) {
+    const right = hand.find((c) => isRightBower(c, trump));
+    if (right) return right;
+    const left = hand.find((c) => isLeftBower(c, trump));
+    if (left) return left;
+    if (trumps.length > 0) {
+      return sortByStrength(trumps, trump, leadSuit, false)[0];
+    }
+  }
+
   const singletonAces = offTrump.filter((c) => {
     if (c.value !== 'A') return false;
     const suit = effectiveSuit(c, trump);
@@ -140,7 +157,7 @@ function pickLead(hand: Card[], trump: Suit, state: GameState, playerId: number)
 
   const isMaker = state.makerTeam === playerTeam(playerId);
   if (isMaker && trumps.length > 0 && state.tricksWon[state.makerTeam!] < 3) {
-    return sortByStrength(trumps, trump, leadSuit, true)[0];
+    return sortByStrength(trumps, trump, leadSuit, false)[0];
   }
 
   if (offTrump.length > 0) {
@@ -174,6 +191,10 @@ function pickFollow(
   const partner = partnerId(playerId);
   const leader = trick.length > 0 ? trickLeader(trick, trump, leadSuit) : null;
   const partnerWinning = leader?.playerId === partner;
+  const defendingLoner =
+    state.goAlone &&
+    state.lonerId !== null &&
+    playerTeam(state.lonerId) !== playerTeam(playerId);
 
   if (partnerWinning) {
     return sortByStrength(legal, trump, leadSuit, true)[0];
@@ -181,6 +202,9 @@ function pickFollow(
 
   const winners = legal.filter((c) => cardWinsIfPlayed(c, playerId, trick, trump, leadSuit));
   if (winners.length > 0) {
+    if (defendingLoner) {
+      return sortByStrength(winners, trump, leadSuit, false)[0];
+    }
     return sortByStrength(winners, trump, leadSuit, true)[0];
   }
 
@@ -223,11 +247,11 @@ export function applyDifficultyToPlay(
 
   const roll = Math.random();
   if (difficulty === 'hard') {
-    if (roll < 0.04) return randomPick(legal.filter((c) => c.id !== expertCard.id) || legal);
+    if (roll < 0.02) return randomPick(legal.filter((c) => c.id !== expertCard.id) || legal);
     return expertCard;
   }
   if (difficulty === 'medium') {
-    if (roll < 0.1) return randomPick(legal);
+    if (roll < 0.08) return randomPick(legal);
     return expertCard;
   }
   // easy — noticeable mistakes
@@ -261,7 +285,7 @@ export function applyDifficultyToOrderUp(
     if (wouldOrder && score < 5 && roll < 0.12) return false;
     return wouldOrder;
   }
-  if (!wouldOrder && score >= ORDER_THRESHOLDS.hard - 0.5 && roll < 0.08) return true;
+  if (!wouldOrder && score >= ORDER_THRESHOLDS.hard && roll < 0.03) return true;
   return wouldOrder;
 }
 
