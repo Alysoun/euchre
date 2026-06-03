@@ -1,7 +1,7 @@
 import styled from 'styled-components';
 import { useGame } from '../context/GameContext';
 import { useHudLayout } from '../context/HudLayoutContext';
-import { SUITS, SUIT_SYMBOL } from '@playfield/core/euchre';
+import { SUITS, SUIT_SYMBOL, PHASE_LABELS } from '@playfield/core/euchre';
 import { soundManager } from '../utils/SoundEffects';
 
 const Bar = styled.div`
@@ -50,6 +50,27 @@ const Hint = styled.p`
   line-height: 1.45;
 `;
 
+const PhaseTitle = styled.div`
+  margin: 0 0 8px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.72);
+  border: 1px solid rgba(255, 215, 0, 0.35);
+  color: #ffd700;
+  font-size: 0.84rem;
+  font-weight: 700;
+  text-align: center;
+  letter-spacing: 0.02em;
+`;
+
+const WaitNote = styled.p`
+  margin: 0;
+  font-size: 0.86rem;
+  opacity: 0.85;
+  text-align: center;
+  color: #ffec8b;
+`;
+
 const click = (fn: () => void) => () => {
   void soundManager.unlock().then(() => {
     soundManager.play('buttonClick');
@@ -58,15 +79,26 @@ const click = (fn: () => void) => () => {
 };
 
 const EuchreActionBar: React.FC = () => {
-  const { state, dispatch, canInteract } = useGame();
+  const { state, dispatch, canInteract, pause } = useGame();
   const { layoutEditMode } = useHudLayout();
   const human = state.players.find((p) => p.isHuman);
-  if (
-    layoutEditMode ||
-    !human ||
-    !canInteract ||
-    state.currentPlayer !== human.id
-  ) {
+  const isHumanTurn = human && state.currentPlayer === human.id;
+  const phaseLabel = PHASE_LABELS[state.phase] ?? state.phase;
+
+  if (layoutEditMode) return null;
+
+  if (!human) return null;
+
+  if (!canInteract && isHumanTurn && pause.kind === 'turnedReveal') {
+    return (
+      <div>
+        <PhaseTitle>{phaseLabel}</PhaseTitle>
+        <WaitNote>Review the turned card — your bid buttons appear in a moment.</WaitNote>
+      </div>
+    );
+  }
+
+  if (!canInteract || !isHumanTurn) {
     return null;
   }
 
@@ -74,6 +106,7 @@ const EuchreActionBar: React.FC = () => {
     const suit = state.turnedCard ? SUIT_SYMBOL[state.turnedCard.suit] : '';
     return (
       <div>
+        <PhaseTitle>{phaseLabel}</PhaseTitle>
         <Hint>Order up the turned suit as trump, go alone, or pass.</Hint>
         <Bar>
           <Btn
@@ -103,6 +136,7 @@ const EuchreActionBar: React.FC = () => {
     const turned = state.turnedCard?.suit;
     return (
       <div>
+        <PhaseTitle>{phaseLabel}</PhaseTitle>
         <Hint>Name trump (not the turned color), go alone, or pass.</Hint>
         <Bar>
           {SUITS.filter((suit) => suit !== turned).map((suit) => (
@@ -134,14 +168,22 @@ const EuchreActionBar: React.FC = () => {
   }
 
   if (state.phase === 'dealerDiscard' && human.id === state.dealerId) {
-    return <Hint>Tap a card in your fan to discard (you picked up the turned card).</Hint>;
+    return (
+      <div>
+        <PhaseTitle>{phaseLabel}</PhaseTitle>
+        <Hint>Tap a card in your fan to discard (you picked up the turned card).</Hint>
+      </div>
+    );
   }
 
   if (state.phase === 'playing') {
     return (
-      <Hint>
-        Tap a highlighted card in your fan to play. Glowing cards are legal plays.
-      </Hint>
+      <div>
+        <PhaseTitle>{phaseLabel}</PhaseTitle>
+        <Hint>
+          Tap a highlighted card in your fan to play. Glowing cards are legal plays.
+        </Hint>
+      </div>
     );
   }
 

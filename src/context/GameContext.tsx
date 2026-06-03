@@ -20,6 +20,7 @@ import { clearGameSession, loadGameSession, saveGameSession } from '../game/sess
 import { debugLogActions } from '../debugConfig';
 import {
   biddingHandKey,
+  dealAnimationDurationMs,
   type GamePace,
   loadStoredGamePace,
   paceTimings,
@@ -190,8 +191,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (state.phase !== 'playing') {
-      clearPauseTimer();
       if (pause.kind === 'trickReveal' || pause.kind === 'trickCollect') {
+        clearPauseTimer();
         setPause({ kind: 'none' });
       }
     }
@@ -207,6 +208,29 @@ export function GameProvider({ children }: { children: ReactNode }) {
     }
     saveGameSession(state);
   }, [state, clearPauseTimer, pause.kind]);
+
+  /** Safety net if animation/timer callbacks are interrupted. */
+  useEffect(() => {
+    if (pause.kind === 'none') return;
+    if (
+      pause.kind !== 'dealing' &&
+      pause.kind !== 'turnedReveal' &&
+      pause.kind !== 'actionBeat'
+    ) {
+      return;
+    }
+    const ms =
+      pause.kind === 'dealing'
+        ? dealAnimationDurationMs(gamePace) + paceTimings(gamePace).turnedCardRevealMs + 800
+        : pause.kind === 'turnedReveal'
+          ? paceTimings(gamePace).turnedCardRevealMs + 600
+          : paceTimings(gamePace).bidBeatMs + 400;
+    const safety = window.setTimeout(() => {
+      clearPauseTimer();
+      setPause({ kind: 'none' });
+    }, ms);
+    return () => window.clearTimeout(safety);
+  }, [pause.kind, gamePace, clearPauseTimer]);
 
   useEffect(() => {
     if (state.phase !== 'bidding' || !state.turnedCard) return;

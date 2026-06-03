@@ -21,9 +21,7 @@ import type { GamePace } from '../game/gamePace';
 import { soundManager } from '../utils/SoundEffects';
 import { validatePlay } from '@playfield/core/euchre';
 import { GlobalStyle } from '../styles/GlobalStyle';
-import { PHASE_LABELS } from '@playfield/core/euchre';
 import {
-  PhaseBanner,
   SetupOverlay,
   TableContainer,
   TableFelt,
@@ -110,11 +108,6 @@ const GameTable: React.FC = () => {
     <TableContainer>
       <GlobalStyle />
       <EuchreScoreboard />
-      {isGameStarted &&
-        state.phase !== 'playing' &&
-        state.phase !== 'gameOver' && (
-          <PhaseBanner>{PHASE_LABELS[state.phase] ?? state.phase}</PhaseBanner>
-        )}
       <GameLog />
       <TrumpSuitPill />
       <EuchreTableControls />
