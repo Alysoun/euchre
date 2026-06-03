@@ -44,11 +44,17 @@ npm run smoke
 
 ## Deploy (GitHub Pages)
 
-```bash
-npm run deploy
-```
+**Automatic (recommended):** push to `main`. The [Deploy to GitHub Pages](.github/workflows/deploy-pages.yml) workflow builds and publishes.
 
-Push `main` with `dist` deployed via `gh-pages`, or use the repo’s Actions workflow.
+**First-time 404 on deploy?** Enable Pages with **GitHub Actions** as the source (not “Deploy from a branch”):
+
+1. https://github.com/Alysoun/euchre/settings/pages  
+2. **Build and deployment → Source → GitHub Actions**  
+3. Re-run the workflow under **Actions**
+
+Details: [docs/GITHUB_PAGES.md](docs/GITHUB_PAGES.md). Live URL: https://alysoun.github.io/euchre/
+
+**Manual (optional):** `npm run deploy` uses the `gh-pages` branch — only if you chose branch deploy in Pages settings, not Actions.
 
 ## Tests
 
@@ -71,4 +77,4 @@ In-progress games persist in `localStorage` (`euchre-active-session`) until **Le
 
 24-card deck, order up / name trump, dealer discard, follow suit with bowers, score to 10.
 
-Not yet: going alone, stick-the-dealer, layout editor UI.
+Not yet: stick-the-dealer.

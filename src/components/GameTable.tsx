@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import { useGame } from '../context/GameContext';
 import { EuchreAIDifficulty, SeatConfig } from '../types/GameTypes';
 import PlayerSelect from './PlayerSelect';
@@ -15,6 +15,9 @@ import SeatLabels from './SeatLabels';
 import SeatAnchors from './SeatAnchors';
 import { useAITurn } from '../hooks/useAITurn';
 import { useGameSounds } from '../hooks/useGameSounds';
+import { EUCHRE_PLAY_DRAG } from '../game/cardDrag';
+import { soundManager } from '../utils/SoundEffects';
+import { validatePlay } from '@playfield/core/euchre';
 import { GlobalStyle } from '../styles/GlobalStyle';
 import { PHASE_LABELS } from '@playfield/core/euchre';
 import {
@@ -30,9 +33,10 @@ import {
 } from './table/TableScene';
 
 const GameTable: React.FC = () => {
-  const { state, dispatch } = useGame();
+  const { state, dispatch, canInteract } = useGame();
   useAITurn();
   useGameSounds();
+  const [playDropActive, setPlayDropActive] = useState(false);
 
   const isGameStarted = state.players.length > 0;
 
@@ -41,6 +45,62 @@ const GameTable: React.FC = () => {
       dispatch({ type: 'START_GAME', seats, aiDifficulty });
     },
     [dispatch]
+  );
+
+  const handleTableDragOver = useCallback((e: React.DragEvent) => {
+    if (!e.dataTransfer.types.includes(EUCHRE_PLAY_DRAG)) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setPlayDropActive(true);
+  }, []);
+
+  const handleTableDragLeave = useCallback((e: React.DragEvent) => {
+    if (e.currentTarget.contains(e.relatedTarget as Node)) return;
+    setPlayDropActive(false);
+  }, []);
+
+  const handleTableDrop = useCallback(
+    (e: React.DragEvent) => {
+      setPlayDropActive(false);
+      const cardId = e.dataTransfer.getData(EUCHRE_PLAY_DRAG);
+      if (!cardId || !canInteract) return;
+      e.preventDefault();
+
+      const human = state.players.find((p) => p.isHuman);
+      if (!human) return;
+
+      const card = human.cards.find((c) => c.id === cardId);
+      if (!card) return;
+
+      if (state.phase === 'dealerDiscard') {
+        if (human.id !== state.dealerId) return;
+        void soundManager.unlock().then(() => {
+          soundManager.play('cardPlay');
+          dispatch({ type: 'DEALER_DISCARD', card });
+        });
+        return;
+      }
+
+      if (state.phase !== 'playing' || !state.trump) return;
+      if (state.currentPlayer !== human.id) return;
+      if (
+        !validatePlay(
+          human.cards,
+          card,
+          state.currentTrick,
+          state.trump,
+          state.leadSuit
+        )
+      ) {
+        return;
+      }
+
+      void soundManager.unlock().then(() => {
+        soundManager.play('cardPlay');
+        dispatch({ type: 'PLAY_CARD', card });
+      });
+    },
+    [canInteract, dispatch, state]
   );
 
   return (
@@ -64,7 +124,12 @@ const GameTable: React.FC = () => {
         <TableStack>
           <TableSurface>
             <TableRail aria-hidden />
-            <TableFelt>
+            <TableFelt
+              $playDropActive={playDropActive}
+              onDragOver={handleTableDragOver}
+              onDragLeave={handleTableDragLeave}
+              onDrop={handleTableDrop}
+            >
               {isGameStarted && <SeatAnchors totalPlayers={state.players.length} />}
               <TrickCenter />
             </TableFelt>

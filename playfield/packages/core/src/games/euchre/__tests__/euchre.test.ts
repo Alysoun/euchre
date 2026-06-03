@@ -25,6 +25,16 @@ describe('euchre trick play', () => {
     ];
     expect(trickWinner(trick, trump, 'diamonds')).toBe(1);
   });
+
+  it('resolves a three-card lone trick', () => {
+    const trump = 'clubs' as const;
+    const trick = [
+      { playerId: 0, card: createCard('clubs', '9') },
+      { playerId: 2, card: createCard('clubs', 'A') },
+      { playerId: 3, card: createCard('hearts', '10') },
+    ];
+    expect(trickWinner(trick, trump, 'clubs')).toBe(2);
+  });
 });
 
 describe('euchre scoring', () => {

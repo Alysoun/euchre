@@ -97,7 +97,7 @@ export const TableRail = styled.div`
   transform: translateZ(-14px);
 `;
 
-export const TableFelt = styled.div`
+export const TableFelt = styled.div<{ $playDropActive?: boolean }>`
   position: relative;
   width: 100%;
   height: 100%;
@@ -109,10 +109,23 @@ export const TableFelt = styled.div`
     inset 0 0 80px rgba(0, 0, 0, 0.35),
     inset 0 12px 24px rgba(255, 255, 255, 0.04),
     inset 0 -20px 40px rgba(0, 0, 0, 0.25);
-  border: 3px solid rgba(90, 55, 25, 0.85);
+  border: 3px solid
+    ${(p) =>
+      p.$playDropActive ? 'rgba(255, 215, 0, 0.95)' : 'rgba(90, 55, 25, 0.85)'};
   transform: translateZ(0);
   transform-style: preserve-3d;
   overflow: visible;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  ${(p) =>
+    p.$playDropActive
+      ? `
+    box-shadow:
+      inset 0 0 80px rgba(255, 215, 0, 0.12),
+      inset 0 12px 24px rgba(255, 255, 255, 0.06),
+      inset 0 -20px 40px rgba(0, 0, 0, 0.25),
+      0 0 28px rgba(255, 215, 0, 0.35);
+  `
+      : ''}
 `;
 
 export const SetupOverlay = styled.div`

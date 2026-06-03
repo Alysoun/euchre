@@ -70,13 +70,32 @@ export const LAYOUT_EDIT_GROUP_HINTS: Record<LayoutEditGroup, string> = {
   log: 'Drag the game log by its header. Use the sliders below to resize.',
   opponents: 'Drag opponent name labels within the blue box at each seat.',
   trick: 'Adjust trick position, spread, size, and how much cards face toward you.',
-  trump: 'Drag the ⠿ on the trump pill to move it. Release near score, log, or hand to snap. Resize below.',
-  hud: 'Drag your hand panel to reposition it on screen.',
+  trump: 'Drag the trump pill (⠿ or whole pill in this tab). Release near score, log, or hand to snap. Resize below.',
+  hud: 'Drag your hand panel to reposition it. Use the slider below to resize your cards.',
 };
 
 export const DEFAULT_LAYOUT_EDIT_GROUP: LayoutEditGroup = 'log';
 
 export const MAX_HUD_DOCK_OFFSET_PX = 160;
+export const MAX_HUD_DOCK_OFFSET_EDIT_PX = 340;
+
+export const MIN_HUD_HAND_SCALE = 0.72;
+export const MAX_HUD_HAND_SCALE = 1.5;
+export const DEFAULT_HUD_HAND_SCALE = 1;
+
+export function clampHudHandScale(scale: number): number {
+  return Math.min(MAX_HUD_HAND_SCALE, Math.max(MIN_HUD_HAND_SCALE, scale));
+}
+
+export function hudDragBounds(editMode = false): {
+  left: number;
+  top: number;
+  right: number;
+  bottom: number;
+} {
+  const max = editMode ? MAX_HUD_DOCK_OFFSET_EDIT_PX : MAX_HUD_DOCK_OFFSET_PX;
+  return { left: -max, top: -max, right: max, bottom: max };
+}
 
 export type HudDockOffset = { dx: number; dy: number };
 
@@ -84,9 +103,10 @@ export type SeatLabelOffset = { dx: number; dy: number };
 export type SeatLabelOffsets = Record<number, SeatLabelOffset>;
 
 export function clampHudDockOffset(dx: number, dy: number): HudDockOffset {
+  const max = MAX_HUD_DOCK_OFFSET_EDIT_PX;
   const dist = Math.hypot(dx, dy);
-  if (dist <= MAX_HUD_DOCK_OFFSET_PX || dist === 0) return { dx, dy };
-  const scale = MAX_HUD_DOCK_OFFSET_PX / dist;
+  if (dist <= max || dist === 0) return { dx, dy };
+  const scale = max / dist;
   return { dx: dx * scale, dy: dy * scale };
 }
 
@@ -99,6 +119,7 @@ export type StoredHudLayout = {
   seatLabelScale: number;
   seatLabelOffsets: SeatLabelOffsets;
   hudDockOffset: HudDockOffset;
+  hudHandScale: number;
   trickLayout: TrickLayout;
   trumpPill: TrumpPillLayout;
 };
@@ -182,6 +203,7 @@ export function defaultStoredHudLayout(): StoredHudLayout {
     seatLabelScale: defaultSeatLabelScaleForViewport(),
     seatLabelOffsets: defaultSeatLabelOffsets(),
     hudDockOffset: defaultHudDockOffset(),
+    hudHandScale: DEFAULT_HUD_HAND_SCALE,
     trickLayout: defaultTrickLayout(),
     trumpPill: defaultTrumpPillLayout(),
   };
@@ -223,6 +245,11 @@ export function loadStoredHudLayout(): StoredHudLayout {
           ...(parsed.seatLabelOffsets ?? {}),
         },
         hudDockOffset,
+        hudHandScale: clampHudHandScale(
+          typeof parsed.hudHandScale === 'number'
+            ? parsed.hudHandScale
+            : DEFAULT_HUD_HAND_SCALE
+        ),
         trickLayout: clampTrickLayout(parsed.trickLayout ?? defaultTrickLayout()),
         trumpPill: clampTrumpPillLayout(parsed.trumpPill ?? defaultTrumpPillLayout()),
       };

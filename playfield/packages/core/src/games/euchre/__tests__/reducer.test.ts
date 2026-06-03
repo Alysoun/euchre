@@ -67,6 +67,68 @@ describe('euchre reducer', () => {
     expect(state.players[0].isHuman).toBe(true);
   });
 
+  it('reorders human hand without changing card set', () => {
+    const state = gameReducer(initialGameState, {
+      type: 'START_GAME',
+      seats: [
+        { isHuman: true, name: 'You' },
+        { isHuman: false },
+        { isHuman: false },
+        { isHuman: false },
+      ],
+    });
+    const hand = state.players[0].cards;
+    const reversed = [...hand].reverse();
+    const next = gameReducer(state, {
+      type: 'REORDER_CARDS',
+      playerId: 0,
+      cards: reversed,
+    });
+    expect(next.players[0].cards.map((c) => c.id)).toEqual(reversed.map((c) => c.id));
+    expect(next.players[1].cards).toEqual(state.players[1].cards);
+  });
+
+  it('ignores reorder from AI seat', () => {
+    const state = startAllAi();
+    const hand = state.players[1].cards;
+    const reversed = [...hand].reverse();
+    const next = gameReducer(state, {
+      type: 'REORDER_CARDS',
+      playerId: 1,
+      cards: reversed,
+    });
+    expect(next).toBe(state);
+  });
+
+  it('completes a three-card trick when going alone', () => {
+    let state = startAllAi();
+    state = {
+      ...state,
+      phase: 'playing',
+      trump: 'hearts',
+      goAlone: true,
+      lonerId: 0,
+      makerTeam: 0,
+      trumpCallerId: 0,
+      trumpCallKind: 'orderUp',
+      currentPlayer: 2,
+      leadSuit: 'clubs',
+      currentTrick: [
+        { playerId: 0, card: createCard('clubs', '9') },
+        { playerId: 2, card: createCard('clubs', 'K') },
+      ],
+      players: state.players.map((p, i) =>
+        i === 2 ? { ...p, cards: [createCard('clubs', 'A')] } : { ...p, cards: [] }
+      ),
+    };
+    state = gameReducer(state, {
+      type: 'PLAY_CARD',
+      card: createCard('clubs', 'A'),
+    });
+    expect(state.currentTrick).toHaveLength(0);
+    expect(state.tricksWon[0]).toBe(1);
+  });
+
   it('rejects illegal card play', () => {
     let state = startAllAi();
     state = {

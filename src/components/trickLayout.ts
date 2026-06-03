@@ -78,10 +78,22 @@ export function clampTrickLayout(layout: Partial<TrickLayout> | TrickLayout): Tr
   };
 }
 
+/** Tighter fan when a lone hand skips the partner seat (3 active players). */
+export const TRICK_FAN_ALONE: Record<number, { dx: number; dy: number }> = {
+  0: { dx: -40, dy: 28 },
+  1: { dx: 0, dy: -36 },
+  2: { dx: 40, dy: 28 },
+};
+
 export function trickFanOffset(
   playerId: number,
-  spread: number
+  spread: number,
+  options?: { goAlone?: boolean; stackIndex?: number }
 ): { dx: number; dy: number } {
+  if (options?.goAlone && options.stackIndex !== undefined) {
+    const base = TRICK_FAN_ALONE[options.stackIndex] ?? { dx: 0, dy: 0 };
+    return { dx: base.dx * spread, dy: base.dy * spread };
+  }
   const base = TRICK_FAN_BASE[playerId] ?? { dx: 0, dy: 0 };
   return { dx: base.dx * spread, dy: base.dy * spread };
 }

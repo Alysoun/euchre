@@ -44,6 +44,8 @@ export function trickWinner(
   trump: Suit,
   leadSuit: Suit
 ): number {
-  if (trick.length !== 4) throw new Error('Trick must have 4 cards');
+  if (trick.length < 3 || trick.length > 4) {
+    throw new Error(`Trick must have 3 or 4 cards, got ${trick.length}`);
+  }
   return trickLeader(trick, trump, leadSuit).playerId;
 }

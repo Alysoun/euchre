@@ -458,6 +458,20 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       });
     }
 
+    case 'REORDER_CARDS': {
+      const player = state.players.find((p) => p.id === action.playerId);
+      if (!player || !player.isHuman) return state;
+      if (action.cards.length !== player.cards.length) return state;
+      const ids = new Set(player.cards.map((c) => c.id));
+      if (!action.cards.every((c) => ids.has(c.id))) return state;
+      return {
+        ...state,
+        players: state.players.map((p) =>
+          p.id === action.playerId ? { ...p, cards: action.cards } : p
+        ),
+      };
+    }
+
     case 'TOGGLE_SOUND':
       return { ...state, soundEnabled: !state.soundEnabled };
 

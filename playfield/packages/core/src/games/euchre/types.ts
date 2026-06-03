@@ -96,6 +96,7 @@ export type GameAction =
   | { type: 'BID'; action: BidAction; suit?: Suit; goAlone?: boolean }
   | { type: 'DEALER_DISCARD'; card: Card }
   | { type: 'PLAY_CARD'; card: Card }
+  | { type: 'REORDER_CARDS'; playerId: number; cards: Card[] }
   | { type: 'DISMISS_HAND_SUMMARY' }
   | { type: 'TOGGLE_SOUND' };
 

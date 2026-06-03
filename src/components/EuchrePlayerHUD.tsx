@@ -9,7 +9,7 @@ import { Card } from '../types/GameTypes';
 import { displayPlayerName } from '../utils/playerName';
 import { soundManager } from '../utils/SoundEffects';
 import {
-  MAX_HUD_DOCK_OFFSET_PX,
+  hudDragBounds,
   Z_LAYOUT_EDIT_TARGET,
   Z_PLAYER_HUD,
   Z_SEAT_LABEL_DIMMED,
@@ -70,9 +70,11 @@ const Meta = styled.div`
   }
 `;
 
-const FanBlock = styled.div`
+const FanBlock = styled.div<{ $scale: number }>`
   margin: 4px 0 8px;
-  min-height: 118px;
+  min-height: ${(p) => Math.round(118 * p.$scale)}px;
+  transform: scale(${(p) => p.$scale});
+  transform-origin: center bottom;
 `;
 
 const ActionsBlock = styled.div`
@@ -102,12 +104,7 @@ const TurnPulse = styled.span`
   }
 `;
 
-const hudDragBounds = {
-  left: -MAX_HUD_DOCK_OFFSET_PX,
-  top: -MAX_HUD_DOCK_OFFSET_PX,
-  right: MAX_HUD_DOCK_OFFSET_PX,
-  bottom: MAX_HUD_DOCK_OFFSET_PX,
-};
+const hudEditDragBounds = hudDragBounds(true);
 
 const EuchrePlayerHUD: React.FC = () => {
   const { state, dispatch, canInteract } = useGame();
@@ -116,6 +113,7 @@ const EuchrePlayerHUD: React.FC = () => {
     isEditingLayoutGroup,
     hudDockOffset,
     setHudDockOffset,
+    hudHandScale,
   } = useHudLayout();
   const hudEditMode = layoutEditMode && isEditingLayoutGroup('hud');
   const hudDimmed = layoutEditMode && !hudEditMode;
@@ -161,6 +159,14 @@ const EuchrePlayerHUD: React.FC = () => {
     });
   };
 
+  const onReorder = (from: number, to: number) => {
+    if (from === to) return;
+    const cards = [...human.cards];
+    const [moved] = cards.splice(from, 1);
+    cards.splice(to, 0, moved);
+    dispatch({ type: 'REORDER_CARDS', playerId: human.id, cards });
+  };
+
   const fanLegalIds =
     state.phase === 'dealerDiscard'
       ? new Set(human.cards.map((c) => c.id))
@@ -179,12 +185,14 @@ const EuchrePlayerHUD: React.FC = () => {
       </Meta>
 
       {showFan && (
-        <FanBlock>
+        <FanBlock $scale={hudHandScale}>
           <HandFan
             cards={human.cards}
             legalIds={fanLegalIds}
             onPlay={onPlay}
+            onReorder={onReorder}
             disabled={!isYourTurn || !canInteract}
+            dragDisabled={layoutEditMode}
             viewOnly={!interactiveFan}
           />
         </FanBlock>
@@ -202,7 +210,7 @@ const EuchrePlayerHUD: React.FC = () => {
         <Draggable
           nodeRef={nodeRef}
           handle=".hud-drag-handle"
-          bounds={hudDragBounds}
+          bounds={hudEditDragBounds}
           position={{ x: hudDockOffset.dx, y: hudDockOffset.dy }}
           onDrag={onHudDrag}
           onStop={onHudDrag}

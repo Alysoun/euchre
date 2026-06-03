@@ -52,11 +52,10 @@ const TrickCenterAnchor = styled.div<{
   position: absolute;
   left: calc(${TRICK_CENTER_LEFT_PCT}% + ${(p) => p.$offsetX}px);
   top: calc(${TRICK_CENTER_TOP_PCT}% + ${(p) => p.$offsetY}px);
-  width: 0;
-  height: 0;
-  transform: rotateX(${(p) => trickLayerCounterRotateXDeg(p.$facePlayer)}deg);
+  transform: translate(-50%, -50%)
+    rotateX(${(p) => trickLayerCounterRotateXDeg(p.$facePlayer)}deg);
   transform-style: preserve-3d;
-  transform-origin: 0 0;
+  transform-origin: center center;
 `;
 
 const CardSlot = styled.div<{
@@ -186,7 +185,10 @@ const TrickCenter: React.FC = () => {
 
         <AnimatePresence>
           {plays.map((play, stackIndex) => {
-            const nudge = trickFanOffset(play.playerId, trickLayout.spread);
+            const nudge = trickFanOffset(play.playerId, trickLayout.spread, {
+              goAlone: state.goAlone,
+              stackIndex,
+            });
             const playKey = `${play.playerId}-${play.card.id}`;
             const highlight = !play.preview && lastKey === playKey;
             const sizePx = highlight ? highlightPx : cardPx;

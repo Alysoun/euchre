@@ -13,6 +13,8 @@ import {
   MIN_TRICK_OFFSET_X,
   MIN_TRICK_OFFSET_Y,
   MIN_TRICK_SPREAD,
+  MAX_HUD_HAND_SCALE,
+  MIN_HUD_HAND_SCALE,
   MAX_TRICK_CARD_SCALE,
   MAX_TRICK_OFFSET_X,
   MAX_TRICK_OFFSET_Y,
@@ -123,6 +125,8 @@ const LayoutEditOverlay: React.FC = () => {
     setTrickLayout,
     trumpPillLayout,
     setTrumpPillLayout,
+    hudHandScale,
+    setHudHandScale,
   } = useHudLayout();
 
   if (!layoutEditMode || state.phase === 'setup' || state.players.length === 0) {
@@ -233,6 +237,21 @@ const LayoutEditOverlay: React.FC = () => {
               {trickLayout.facePlayer}%
             </ScaleControl>
           </>
+        )}
+        {layoutEditGroup === 'hud' && (
+          <ScaleControl>
+            Hand size
+            <input
+              type="range"
+              min={MIN_HUD_HAND_SCALE}
+              max={MAX_HUD_HAND_SCALE}
+              step={0.05}
+              value={hudHandScale}
+              onChange={(e) => setHudHandScale(Number(e.target.value))}
+              aria-label="Hand card size"
+            />
+            {Math.round(hudHandScale * 100)}%
+          </ScaleControl>
         )}
         {layoutEditGroup === 'trump' && (
           <ScaleControl>

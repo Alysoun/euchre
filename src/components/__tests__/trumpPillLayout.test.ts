@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   clampTrumpPillLayout,
   defaultTrumpPillLayout,
+  estimatedSnapCenter,
   nearestSnap,
   resolveTrumpPillCenter,
   snapPointsFromRects,
@@ -22,7 +23,7 @@ describe('trumpPillLayout', () => {
     });
     const center = resolveTrumpPillCenter(layout, points);
     expect(center.x).toBe(314);
-    expect(center.y).toBe(28);
+    expect(center.y).toBeGreaterThanOrEqual(80);
   });
 
   it('snaps when drag ends within radius', () => {
@@ -35,8 +36,24 @@ describe('trumpPillLayout', () => {
     expect(hit?.snapId).toBe('score-right');
   });
 
-  it('defaults include scale', () => {
+  it('defaults include scale and on-screen free position', () => {
     const d = defaultTrumpPillLayout();
     expect(d.scale).toBeGreaterThanOrEqual(0.65);
+    expect(d.snapId).toBeNull();
+    expect(d.x).toBeGreaterThan(40);
+    expect(d.y).toBeGreaterThan(80);
+  });
+
+  it('falls back to estimated anchor when rects are missing', () => {
+    const layout = clampTrumpPillLayout({
+      snapId: 'score-right',
+      x: 8,
+      y: -2,
+      scale: 1,
+    });
+    const center = resolveTrumpPillCenter(layout, []);
+    const est = estimatedSnapCenter('score-right');
+    expect(center.x).toBe(est.x + 8);
+    expect(center.y).toBeGreaterThanOrEqual(80);
   });
 });

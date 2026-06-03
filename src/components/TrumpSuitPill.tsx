@@ -9,10 +9,11 @@ import { SUIT_SYMBOL } from '@playfield/core/euchre';
 import type { GameState, Suit } from '../types/GameTypes';
 import { trumpCallerShortLabel } from '../utils/trumpCallerLabel';
 import {
-  TRUMP_PILL_BASE_PX,
+  clampTrumpPillCenter,
   nearestSnap,
   resolveTrumpPillCenter,
   snapPointsFromRects,
+  TRUMP_PILL_BASE_PX,
 } from './trumpPillLayout';
 import {
   Z_LAYOUT_EDIT_TARGET,
@@ -50,8 +51,8 @@ const PillWrap = styled.div<{ $editMode?: boolean; $dimmed?: boolean }>`
   top: 0;
   z-index: ${(p) =>
     p.$editMode ? Z_LAYOUT_EDIT_TARGET : p.$dimmed ? Z_SEAT_LABEL_DIMMED : Z_TRUMP_PILL};
-  opacity: ${(p) => (p.$dimmed ? 0.38 : 1)};
-  pointer-events: ${(p) => (p.$dimmed ? 'none' : 'auto')};
+  opacity: ${(p) => (p.$dimmed ? 0.55 : 1)};
+  pointer-events: auto;
   transition: opacity 0.15s ease;
   display: flex;
   flex-direction: column;
@@ -67,7 +68,7 @@ const PillWrap = styled.div<{ $editMode?: boolean; $dimmed?: boolean }>`
       : ''}
 `;
 
-const PillBody = styled.div<{ $scale: number; $suit: Suit }>`
+const PillBody = styled.div<{ $scale: number; $suit: Suit; $dragSurface?: boolean }>`
   position: relative;
   display: flex;
   align-items: center;
@@ -85,6 +86,12 @@ const PillBody = styled.div<{ $scale: number; $suit: Suit }>`
   line-height: 1;
   font-weight: 700;
   user-select: none;
+  cursor: ${(p) => (p.$dragSurface ? 'grab' : 'default')};
+  touch-action: none;
+
+  &:active {
+    cursor: ${(p) => (p.$dragSurface ? 'grabbing' : 'default')};
+  }
 `;
 
 const Grip = styled.button`
@@ -161,6 +168,7 @@ const TrumpSuitPill: React.FC = () => {
   const [layoutTick, setLayoutTick] = useState(0);
   const trumpEdit = layoutEditMode && isEditingLayoutGroup('trump');
   const dimmed = layoutEditMode && !trumpEdit;
+  const dragHandle = trumpEdit ? '.trump-pill-drag-surface' : '.trump-pill-grip';
 
   const display = displaySuit(state);
   const scale = trumpPillLayout.scale;
@@ -197,8 +205,9 @@ const TrumpSuitPill: React.FC = () => {
 
   const applyDragStop = useCallback(
     (centerX: number, centerY: number) => {
+      const clamped = clampTrumpPillCenter(centerX, centerY);
       const points = snapPointsFromRects(getAnchorRects());
-      const hit = nearestSnap(centerX, centerY, points);
+      const hit = nearestSnap(clamped.x, clamped.y, points);
       if (hit) {
         setTrumpPillLayout({
           snapId: hit.snapId,
@@ -208,8 +217,8 @@ const TrumpSuitPill: React.FC = () => {
       } else {
         setTrumpPillLayout({
           snapId: null,
-          x: centerX,
-          y: centerY,
+          x: clamped.x,
+          y: clamped.y,
         });
       }
       setDragPos(null);
@@ -239,14 +248,18 @@ const TrumpSuitPill: React.FC = () => {
   return createPortal(
     <Draggable
       nodeRef={nodeRef}
-      handle=".trump-pill-grip"
+      handle={dragHandle}
       position={dragPosition}
       onDrag={onDrag}
       onStop={onStop}
-      disabled={dimmed}
     >
       <PillWrap ref={nodeRef} $editMode={trumpEdit} $dimmed={dimmed}>
-        <PillBody $scale={scale} $suit={display.suit}>
+        <PillBody
+          $scale={scale}
+          $suit={display.suit}
+          $dragSurface={trumpEdit}
+          className={trumpEdit ? 'trump-pill-drag-surface' : undefined}
+        >
           {SUIT_SYMBOL[display.suit]}
           <Grip
             type="button"

@@ -10,6 +10,7 @@ import {
   clearStoredHudLayout,
   clampGameLogLayout,
   clampHudDockOffset,
+  clampHudHandScale,
   clampSeatLabelOffset,
   clampSeatLabelScale,
   defaultGameLogLayout,
@@ -34,6 +35,7 @@ type HudLayoutContextValue = {
   seatLabelScale: number;
   seatLabelOffsets: SeatLabelOffsets;
   hudDockOffset: HudDockOffset;
+  hudHandScale: number;
   trickLayout: TrickLayout;
   trumpPillLayout: TrumpPillLayout;
   layoutEditMode: boolean;
@@ -46,6 +48,7 @@ type HudLayoutContextValue = {
   setSeatLabelScale: (scale: number) => void;
   setSeatLabelOffset: (seatIndex: number, offset: SeatLabelOffset) => void;
   setHudDockOffset: (offset: HudDockOffset) => void;
+  setHudHandScale: (scale: number) => void;
   setTrickLayout: (patch: Partial<TrickLayout>) => void;
   setTrumpPillLayout: (patch: Partial<TrumpPillLayout>) => void;
   resetLayout: () => void;
@@ -132,6 +135,13 @@ export const HudLayoutProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }));
   }, []);
 
+  const setHudHandScale = useCallback((scale: number) => {
+    setStored((prev) => ({
+      ...prev,
+      hudHandScale: clampHudHandScale(scale),
+    }));
+  }, []);
+
   const setTrickLayout = useCallback((patch: Partial<TrickLayout>) => {
     setStored((prev) => ({
       ...prev,
@@ -161,6 +171,7 @@ export const HudLayoutProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       seatLabelScale: stored.seatLabelScale,
       seatLabelOffsets: stored.seatLabelOffsets,
       hudDockOffset: stored.hudDockOffset,
+      hudHandScale: stored.hudHandScale,
       trickLayout: stored.trickLayout,
       trumpPillLayout: stored.trumpPill,
       layoutEditMode,
@@ -173,6 +184,7 @@ export const HudLayoutProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       setSeatLabelScale,
       setSeatLabelOffset,
       setHudDockOffset,
+      setHudHandScale,
       setTrickLayout,
       setTrumpPillLayout,
       resetLayout,
@@ -188,6 +200,7 @@ export const HudLayoutProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       setSeatLabelScale,
       setSeatLabelOffset,
       setHudDockOffset,
+      setHudHandScale,
       setTrickLayout,
       setTrumpPillLayout,
       resetLayout,
