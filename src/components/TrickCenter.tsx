@@ -132,13 +132,15 @@ const KittyLabel = styled.span`
 `;
 
 const TrickCenter: React.FC = () => {
-  const { state, visibleTrick, lastRevealPlay } = useGame();
+  const { state, visibleTrick, lastRevealPlay, pause } = useGame();
   const { trickLayout, layoutEditMode, isEditingLayoutGroup } = useHudLayout();
   const trickEditMode = isEditingLayoutGroup('trick');
   const trickDimmed = layoutEditMode && !trickEditMode;
 
   const showTurned =
-    state.turnedCard && (state.phase === 'bidding' || state.phase === 'biddingRound2');
+    state.turnedCard &&
+    (state.phase === 'bidding' || state.phase === 'biddingRound2') &&
+    pause.kind !== 'dealing';
 
   const lastKey = lastRevealPlay
     ? `${lastRevealPlay.playerId}-${lastRevealPlay.card.id}`
@@ -148,7 +150,10 @@ const TrickCenter: React.FC = () => {
   const highlightPx = Math.round(cardPx * 1.08);
   const turnedPx = Math.round(68 * trickLayout.cardScale);
 
-  const showTrickCards = state.phase === 'playing' && visibleTrick.length > 0;
+  const showTrickCards =
+    state.phase === 'playing' &&
+    visibleTrick.length > 0 &&
+    pause.kind !== 'trickCollect';
 
   const plays = showTrickCards
     ? visibleTrick.map((play) => ({ ...play, preview: false }))
@@ -159,6 +164,7 @@ const TrickCenter: React.FC = () => {
   return (
     <TrickLayer $editMode={trickEditMode} $dimmed={trickDimmed}>
       <TrickCenterAnchor
+        data-anim-anchor="table-center"
         $offsetX={trickLayout.offsetX}
         $offsetY={trickLayout.offsetY}
         $facePlayer={trickLayout.facePlayer}

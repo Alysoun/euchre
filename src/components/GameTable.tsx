@@ -10,12 +10,14 @@ import GameLog from './GameLog';
 import LeaveTableButton from './LeaveTableButton';
 import EuchreTableControls from './EuchreTableControls';
 import LayoutEditOverlay from './LayoutEditOverlay';
+import AnimationLayer from './AnimationLayer';
 import TrumpSuitPill from './TrumpSuitPill';
 import SeatLabels from './SeatLabels';
 import SeatAnchors from './SeatAnchors';
 import { useAITurn } from '../hooks/useAITurn';
 import { useGameSounds } from '../hooks/useGameSounds';
 import { EUCHRE_PLAY_DRAG } from '../game/cardDrag';
+import type { GamePace } from '../game/gamePace';
 import { soundManager } from '../utils/SoundEffects';
 import { validatePlay } from '@playfield/core/euchre';
 import { GlobalStyle } from '../styles/GlobalStyle';
@@ -33,7 +35,7 @@ import {
 } from './table/TableScene';
 
 const GameTable: React.FC = () => {
-  const { state, dispatch, canInteract } = useGame();
+  const { state, dispatch, canInteract, setGamePace } = useGame();
   useAITurn();
   useGameSounds();
   const [playDropActive, setPlayDropActive] = useState(false);
@@ -41,10 +43,11 @@ const GameTable: React.FC = () => {
   const isGameStarted = state.players.length > 0;
 
   const handleStart = useCallback(
-    (seats: SeatConfig[], aiDifficulty: EuchreAIDifficulty) => {
+    (seats: SeatConfig[], aiDifficulty: EuchreAIDifficulty, pace: GamePace) => {
+      setGamePace(pace);
       dispatch({ type: 'START_GAME', seats, aiDifficulty });
     },
-    [dispatch]
+    [dispatch, setGamePace]
   );
 
   const handleTableDragOver = useCallback((e: React.DragEvent) => {
@@ -118,6 +121,7 @@ const GameTable: React.FC = () => {
       <LayoutEditOverlay />
       <LeaveTableButton />
       <HandSummaryModal />
+      <AnimationLayer />
 
       <TableSceneWrap>
         <TableShadow aria-hidden />

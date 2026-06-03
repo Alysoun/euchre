@@ -110,7 +110,7 @@ const TurnPulse = styled.span`
 const hudEditDragBounds = hudDragBounds(true);
 
 const EuchrePlayerHUD: React.FC = () => {
-  const { state, dispatch, canInteract } = useGame();
+  const { state, dispatch, canInteract, cardsConcealed } = useGame();
   const {
     layoutEditMode,
     isEditingLayoutGroup,
@@ -187,7 +187,10 @@ const EuchrePlayerHUD: React.FC = () => {
         {hudEditMode && ' · ⠿ drag to move'}
       </Meta>
 
-      {showFan && (
+        {cardsConcealed && showFan && (
+          <Meta style={{ opacity: 0.75 }}>Dealing cards…</Meta>
+        )}
+        {showFan && !cardsConcealed && (
         <FanBlock $scale={hudHandScale}>
           <HandFan
             cards={human.cards}

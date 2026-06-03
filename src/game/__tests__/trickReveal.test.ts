@@ -20,7 +20,7 @@ describe('trickReveal', () => {
     const shown = trickPlaysAfterAction(prev, { type: 'PLAY_CARD', card }, next);
     expect(shown).toHaveLength(4);
     expect(shown![3].card.id).toBe(card.id);
-    expect(revealDurationMs(shown!)).toBe(2400);
+    expect(revealDurationMs(shown!)).toBe(2800);
   });
 
   it('pauses when the third card completes a lone trick', () => {

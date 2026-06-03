@@ -9,6 +9,8 @@ import {
 import { SeatConfig } from '../types/GameTypes';
 import { loadStoredAiDifficulty, saveStoredAiDifficulty } from '../game/aiSettings';
 import { GAME_NAME, GAME_TAGLINE } from '../game/branding';
+import type { GamePace } from '../game/gamePace';
+import { loadStoredGamePace, saveStoredGamePace } from '../game/gamePace';
 import {
   loadStoredPlayerName,
   saveStoredPlayerName,
@@ -140,6 +142,14 @@ const DifficultyBtn = styled.button<{ $active: boolean }>`
   }
 `;
 
+const PaceHint = styled.p`
+  margin: 0 0 1rem;
+  text-align: left;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.72);
+`;
+
 const DifficultyHint = styled.p`
   margin: 0 0 1rem;
   text-align: left;
@@ -166,7 +176,7 @@ const StartButton = styled.button`
 `;
 
 interface PlayerSelectProps {
-  onStart: (seats: SeatConfig[], aiDifficulty: EuchreAIDifficulty) => void;
+  onStart: (seats: SeatConfig[], aiDifficulty: EuchreAIDifficulty, pace: GamePace) => void;
 }
 
 const PlayerSelect: React.FC<PlayerSelectProps> = ({ onStart }) => {
@@ -174,19 +184,21 @@ const PlayerSelect: React.FC<PlayerSelectProps> = ({ onStart }) => {
   const [aiDifficulty, setAiDifficulty] = useState<EuchreAIDifficulty>(() =>
     loadStoredAiDifficulty()
   );
+  const [gamePace, setGamePace] = useState<GamePace>(() => loadStoredGamePace());
 
   const handleStart = () => {
     void soundManager.unlock();
     const name = sanitizePlayerName(humanName);
     saveStoredPlayerName(name);
     saveStoredAiDifficulty(aiDifficulty);
+    saveStoredGamePace(gamePace);
     const seats: SeatConfig[] = [
       { isHuman: true, name },
       { isHuman: false },
       { isHuman: false },
       { isHuman: false },
     ];
-    onStart(seats, aiDifficulty);
+    onStart(seats, aiDifficulty, gamePace);
   };
 
   return (
@@ -228,6 +240,31 @@ const PlayerSelect: React.FC<PlayerSelectProps> = ({ onStart }) => {
         ))}
       </DifficultyRow>
       <DifficultyHint>{EUCHRE_AI_DIFFICULTY_HINTS[aiDifficulty]}</DifficultyHint>
+      <Label id="game-pace-label">Game speed</Label>
+      <DifficultyRow role="radiogroup" aria-labelledby="game-pace-label">
+        <DifficultyBtn
+          type="button"
+          role="radio"
+          aria-checked={gamePace === 'normal'}
+          $active={gamePace === 'normal'}
+          onClick={() => setGamePace('normal')}
+        >
+          Normal
+        </DifficultyBtn>
+        <DifficultyBtn
+          type="button"
+          role="radio"
+          aria-checked={gamePace === 'instant'}
+          $active={gamePace === 'instant'}
+          onClick={() => setGamePace('instant')}
+        >
+          Instant
+        </DifficultyBtn>
+      </DifficultyRow>
+      <PaceHint>
+        Normal deals cards in, pauses on the turned card before bidding, and collects tricks to the
+        winner. Instant skips those beats for a faster table.
+      </PaceHint>
       <StartButton type="button" onClick={handleStart}>
         Deal me in
       </StartButton>
