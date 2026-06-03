@@ -96,6 +96,28 @@ export function shouldGoAlone(
   return false;
 }
 
+/**
+ * Go-alone on order-up: only the dealer adds the turned card to their hand.
+ * Callers who are not dealer must not treat the kitty as theirs.
+ */
+export function shouldGoAloneOnOrderUp(
+  hand: Card[],
+  turnedCard: Card,
+  trump: Suit,
+  callerIsDealer: boolean,
+  difficulty: EuchreAIDifficulty
+): boolean {
+  if (difficulty !== 'hard') return false;
+  const evalHand = callerIsDealer ? [...hand, turnedCard] : hand;
+  if (!callerIsDealer) {
+    const hasRight = hand.some((c) => isRightBower(c, trump));
+    const hasLeft = hand.some((c) => isLeftBower(c, trump));
+    if (!hasRight || !hasLeft) return false;
+    if (trumpCount(hand, trump) < 3) return false;
+  }
+  return shouldGoAlone(evalHand, trump, difficulty);
+}
+
 export function pickDiscard(hand: Card[], trump: Suit): Card {
   const sorted = [...hand].sort((a, b) => {
     const aTrump = effectiveSuit(a, trump) === trump;

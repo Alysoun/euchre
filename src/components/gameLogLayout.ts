@@ -28,9 +28,9 @@ export function defaultGameLogLayout(): GameLogLayout {
   const height = tablet ? 160 : 180;
 
   return {
-    x: tablet ? Math.max(8, w - 236) : 16,
+    x: tablet ? Math.max(8, w - 296) : 16,
     y: tablet ? Math.max(56, 72) : Math.max(100, h - 360),
-    width: tablet ? 220 : 240,
+    width: tablet ? 280 : 300,
     height,
     collapsed: false,
   };
@@ -119,7 +119,7 @@ export function loadLegacyGameLogLayout(): GameLogLayout | null {
     return clampGameLogLayout({
       x: typeof parsed.x === 'number' ? parsed.x : 16,
       y: typeof parsed.y === 'number' ? parsed.y : defaultGameLogLayout().y,
-      width: typeof parsed.width === 'number' ? parsed.width : 240,
+      width: typeof parsed.width === 'number' ? Math.max(parsed.width, 280) : 300,
       height: typeof parsed.height === 'number' ? parsed.height : 160,
       collapsed: Boolean(parsed.collapsed),
     });

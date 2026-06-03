@@ -8,6 +8,7 @@ import {
   pickDiscard,
   pickExpertPlay,
   shouldGoAlone,
+  shouldGoAloneOnOrderUp,
   shouldNameTrump,
   shouldOrderUp,
 } from './aiStrategy';
@@ -40,9 +41,11 @@ export function getAIAction(state: GameState): AIAction {
     if (!order) {
       return { type: 'BID', action: 'pass' };
     }
-    const alone = shouldGoAlone(
-      [...player.cards, state.turnedCard],
+    const alone = shouldGoAloneOnOrderUp(
+      player.cards,
+      state.turnedCard,
       turned,
+      player.id === state.dealerId,
       difficulty
     );
     return {

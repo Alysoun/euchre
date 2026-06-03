@@ -105,6 +105,7 @@ function startGame(seats: SeatConfig[], aiDifficulty = DEFAULT_EUCHRE_AI_DIFFICU
     team: playerTeam(i),
   }));
   const soloHuman = seats.filter((s) => s.isHuman).length === 1;
+  const opening = [log('First team to 10 wins. You partner with seat 3.', 'info')];
   let state: GameState = {
     players,
     dealerId: 0,
@@ -124,7 +125,10 @@ function startGame(seats: SeatConfig[], aiDifficulty = DEFAULT_EUCHRE_AI_DIFFICU
     tricksWon: { 0: 0, 1: 0 },
     score: { 0: 0, 1: 0 },
     roundNumber: 1,
-    log: [log('First team to 10 wins. You partner with seat 3.', 'info')],
+    log: opening,
+    sessionStartedAt: Date.now(),
+    sessionLog: [...opening],
+    sessionLogDroppedCount: 0,
     soundEnabled: true,
     isSoloSession: soloHuman,
     aiDifficulty: normalizeEuchreAIDifficulty(aiDifficulty),

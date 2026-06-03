@@ -4,6 +4,7 @@ import { trickLeader } from '../trickPlay';
 import {
   pickExpertPlay,
   shouldGoAlone,
+  shouldGoAloneOnOrderUp,
   shouldOrderUp,
   trumpHandScore,
 } from '../aiStrategy';
@@ -85,5 +86,30 @@ describe('aiStrategy', () => {
     ];
     expect(trumpHandScore(march, trump)).toBeGreaterThan(10);
     expect(shouldGoAlone(march, trump, 'hard')).toBe(true);
+  });
+
+  it('does not treat the kitty as loner hand when caller is not dealer', () => {
+    const trump = 'diamonds' as const;
+    const turned = createCard('diamonds', 'K');
+    const hand = [
+      createCard('diamonds', 'J'),
+      createCard('hearts', 'J'),
+      createCard('diamonds', 'A'),
+      createCard('spades', '9'),
+      createCard('clubs', '9'),
+    ];
+    expect(
+      shouldGoAloneOnOrderUp(hand, turned, trump, false, 'hard')
+    ).toBe(true);
+    const withoutLeft = [
+      createCard('diamonds', 'J'),
+      createCard('diamonds', 'A'),
+      createCard('spades', '9'),
+      createCard('hearts', '9'),
+      createCard('clubs', '9'),
+    ];
+    expect(
+      shouldGoAloneOnOrderUp(withoutLeft, turned, trump, false, 'hard')
+    ).toBe(false);
   });
 });

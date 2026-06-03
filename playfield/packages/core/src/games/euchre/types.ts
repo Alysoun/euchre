@@ -69,6 +69,10 @@ export interface GameState {
   score: Record<TeamId, number>;
   roundNumber: number;
   log: GameLogEntry[];
+  /** Full session log for copy/save export (FIFO capped at 512KB). */
+  sessionLog?: GameLogEntry[];
+  sessionLogDroppedCount?: number;
+  sessionStartedAt?: number;
   soundEnabled: boolean;
   isSoloSession: boolean;
   /** Skill level for all computer players at the table. */

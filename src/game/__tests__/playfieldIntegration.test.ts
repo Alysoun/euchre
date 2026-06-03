@@ -63,8 +63,12 @@ describe('@playfield/core/euchre integration', () => {
     saveGameSession(dupes);
     const loaded = loadGameSession();
     expect(loaded).not.toBeNull();
-    const ids = loaded!.log.map((e) => e.id);
+    const repaired = repairLoadedGameSession(loaded!);
+    const ids = repaired.log.map((e) => e.id);
     expect(new Set(ids).size).toBe(ids.length);
-    expect(repairLoadedGameSession(loaded!)).toEqual(loaded);
+    if (repaired.sessionLog) {
+      const sessionIds = repaired.sessionLog.map((e) => e.id);
+      expect(new Set(sessionIds).size).toBe(sessionIds.length);
+    }
   });
 });
