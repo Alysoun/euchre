@@ -153,9 +153,9 @@ const TrickCenter: React.FC = () => {
   const turnedPx = Math.round(68 * trickLayout.cardScale);
 
   const showTrickCards =
-    state.phase === 'playing' &&
     visibleTrick.length > 0 &&
-    pause.kind !== 'trickCollect';
+    pause.kind !== 'trickCollect' &&
+    (state.phase === 'playing' || pause.kind === 'trickReveal');
 
   const plays = showTrickCards
     ? visibleTrick.map((play) => ({ ...play, preview: false }))

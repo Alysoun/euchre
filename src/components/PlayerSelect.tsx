@@ -26,9 +26,21 @@ const SelectContainer = styled.div`
   text-align: center;
   min-width: min(440px, calc(100vw - 24px));
   max-width: min(520px, calc(100vw - 16px));
+  max-height: min(
+    90vh,
+    calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 24px)
+  );
+  overflow-y: auto;
   border: 2px solid #ffd700;
   color: white;
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.65);
+  -webkit-overflow-scrolling: touch;
+
+  @media (max-width: 480px) {
+    padding: 1.25rem 1rem 1.1rem;
+    border-radius: 12px;
+    min-width: min(440px, calc(100vw - 16px));
+  }
 `;
 
 const Title = styled.h1`

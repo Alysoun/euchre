@@ -29,9 +29,31 @@ export function cardFanTransform(index: number, total: number, lifted: boolean):
   return `translateX(calc(-50% + ${spreadX}px)) rotate(${angle}deg) translateY(${arcY + lift}px) translateZ(${depth}px)`;
 }
 
-export function fanContainerSize(cardCount: number): { width: number; height: number } {
+export const FAN_HOVER_HEADROOM_PX = 24;
+
+export function fanContainerSize(
+  cardCount: number,
+  cardBasePx = 72
+): { width: number; height: number } {
+  const scale = cardBasePx / 72;
   return {
-    width: Math.max(200, cardCount * 36 + 88),
-    height: 118,
+    width: Math.max(200 * scale, cardCount * 36 * scale + 88 * scale),
+    height: Math.round(118 * scale),
+  };
+}
+
+/** Layout box for a scaled hand fan — outer size grows with scale so HUD text stays visible. */
+export function scaledFanLayoutSize(
+  cardCount: number,
+  handScale: number,
+  cardBasePx = 72
+): { baseWidth: number; baseHeight: number; width: number; height: number } {
+  const base = fanContainerSize(cardCount, cardBasePx);
+  const baseHeight = base.height + FAN_HOVER_HEADROOM_PX;
+  return {
+    baseWidth: base.width,
+    baseHeight,
+    width: Math.ceil(base.width * handScale),
+    height: Math.ceil(baseHeight * handScale),
   };
 }

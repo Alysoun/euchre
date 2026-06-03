@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import styled, { css } from 'styled-components';
 import Draggable, { DraggableData } from 'react-draggable';
 import { useGame } from '../context/GameContext';
@@ -9,13 +9,16 @@ import { Card } from '../types/GameTypes';
 import { displayPlayerName } from '../utils/playerName';
 import { soundManager } from '../utils/SoundEffects';
 import {
+  defaultHandCardBasePx,
   hudDragBounds,
   Z_LAYOUT_EDIT_TARGET,
   Z_PLAYER_HUD,
   Z_SEAT_LABEL_DIMMED,
 } from './hudPanelLayout';
 import HandFan from './cards/HandFan';
+import HandFanScaler from './HandFanScaler';
 import EuchreActionBar from './EuchreActionBar';
+import { scaledFanLayoutSize } from '../utils/cardFanStack';
 
 const dockFrame = css<{ $editMode?: boolean; $dimmed?: boolean }>`
   border-radius: 16px 16px 12px 12px;
@@ -51,15 +54,26 @@ const DockAnchor = styled.div<{ $dx: number; $dy: number; $z: number }>`
   transform: translateX(-50%);
   z-index: ${(p) => p.$z};
   width: min(720px, calc(100vw - 12px));
+
+  @media (max-width: 480px) {
+    width: min(720px, calc(100vw - 4px));
+  }
 `;
 
 const Dock = styled.div<{ $editMode?: boolean; $dimmed?: boolean }>`
   padding: 12px 14px 14px;
   overflow: visible;
   ${dockFrame}
+
+  @media (max-width: 480px) {
+    padding: 8px 10px 10px;
+    border-radius: 14px 14px 10px 10px;
+  }
 `;
 
 const Meta = styled.div`
+  position: relative;
+  z-index: 2;
   text-align: center;
   font-size: 0.84rem;
   opacity: 0.92;
@@ -69,18 +83,16 @@ const Meta = styled.div`
   strong {
     color: #ffd700;
   }
-`;
 
-const FanBlock = styled.div<{ $scale: number }>`
-  margin: 4px 0 8px;
-  min-height: ${(p) => Math.round(138 * p.$scale)}px;
-  padding-bottom: ${(p) => Math.round(10 * p.$scale)}px;
-  transform: scale(${(p) => p.$scale});
-  transform-origin: center bottom;
-  overflow: visible;
+  @media (max-width: 480px) {
+    font-size: 0.78rem;
+    margin-bottom: 4px;
+  }
 `;
 
 const ActionsBlock = styled.div`
+  position: relative;
+  z-index: 2;
   margin-top: 4px;
   padding-top: 4px;
 `;
@@ -127,6 +139,18 @@ const EuchrePlayerHUD: React.FC = () => {
       : Z_PLAYER_HUD;
   const nodeRef = useRef<HTMLDivElement>(null);
   const hudAnchorRef = useHudAnchorRef('hud');
+  const [cardBasePx, setCardBasePx] = useState(() => defaultHandCardBasePx());
+
+  useEffect(() => {
+    const sync = () => setCardBasePx(defaultHandCardBasePx());
+    sync();
+    window.addEventListener('resize', sync);
+    window.addEventListener('orientationchange', sync);
+    return () => {
+      window.removeEventListener('resize', sync);
+      window.removeEventListener('orientationchange', sync);
+    };
+  }, []);
 
   const human = state.players.find((p) => p.isHuman);
   if (!human || state.players.length === 0) return null;
@@ -175,6 +199,8 @@ const EuchrePlayerHUD: React.FC = () => {
       ? new Set(human.cards.map((c) => c.id))
       : legalIds;
 
+  const fanLayout = scaledFanLayoutSize(human.cards.length, hudHandScale, cardBasePx);
+
   const onHudDrag = (_: unknown, data: DraggableData) => {
     setHudDockOffset({ dx: data.x, dy: data.y });
   };
@@ -191,7 +217,11 @@ const EuchrePlayerHUD: React.FC = () => {
           <Meta style={{ opacity: 0.75 }}>Dealing cards…</Meta>
         )}
         {showFan && !cardsConcealed && (
-        <FanBlock $scale={hudHandScale}>
+        <HandFanScaler
+          scale={hudHandScale}
+          baseWidth={fanLayout.baseWidth}
+          baseHeight={fanLayout.baseHeight}
+        >
           <HandFan
             cards={human.cards}
             legalIds={fanLegalIds}
@@ -200,8 +230,9 @@ const EuchrePlayerHUD: React.FC = () => {
             disabled={!isYourTurn || !canInteract}
             dragDisabled={layoutEditMode}
             viewOnly={!interactiveFan}
+            cardBasePx={cardBasePx}
           />
-        </FanBlock>
+        </HandFanScaler>
       )}
 
       <ActionsBlock>

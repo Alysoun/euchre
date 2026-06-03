@@ -52,6 +52,11 @@ const LogPanel = styled.div<{
     outline-offset: 2px;
   `
       : ''}
+
+  @media (max-width: 480px) {
+    max-width: calc(100vw - 16px);
+    font-size: 0.74rem;
+  }
 `;
 
 const LogHeader = styled.div`

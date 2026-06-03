@@ -18,6 +18,17 @@ const Board = styled.div`
   flex-direction: column;
   align-items: center;
   gap: 4px;
+  max-width: calc(100vw - 220px);
+  pointer-events: none;
+
+  @media (max-width: 768px) {
+    max-width: calc(100vw - 200px);
+  }
+
+  @media (max-width: 480px) {
+    max-width: calc(100vw - 24px);
+    top: max(52px, calc(env(safe-area-inset-top, 0px) + 44px));
+  }
 `;
 
 const BoardInner = styled.div`
@@ -31,7 +42,17 @@ const BoardInner = styled.div`
   color: white;
   font-weight: 700;
   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.5);
-  pointer-events: none;
+
+  @media (max-width: 768px) {
+    gap: 12px;
+    padding: 8px 14px;
+  }
+
+  @media (max-width: 480px) {
+    gap: 8px;
+    padding: 6px 10px;
+    border-radius: 12px;
+  }
 `;
 
 const DifficultyPip = styled.div`
@@ -41,6 +62,10 @@ const DifficultyPip = styled.div`
   text-transform: uppercase;
   color: rgba(255, 215, 0, 0.75);
   opacity: 0.9;
+
+  @media (max-width: 480px) {
+    font-size: 0.56rem;
+  }
 `;
 
 const TeamScore = styled.div<{ $highlight?: boolean; $makers?: boolean }>`
@@ -48,6 +73,14 @@ const TeamScore = styled.div<{ $highlight?: boolean; $makers?: boolean }>`
   min-width: 88px;
   opacity: ${(p) => (p.$highlight ? 1 : 0.88)};
   color: ${(p) => (p.$highlight ? '#ffd700' : 'white')};
+
+  @media (max-width: 768px) {
+    min-width: 72px;
+  }
+
+  @media (max-width: 480px) {
+    min-width: 58px;
+  }
 
   ${(p) =>
     p.$makers
@@ -69,6 +102,11 @@ const Label = styled.div`
   margin-bottom: 2px;
   text-transform: uppercase;
   letter-spacing: 0.04em;
+
+  @media (max-width: 480px) {
+    font-size: 0.58rem;
+    letter-spacing: 0.02em;
+  }
 `;
 
 const AllianceNames = styled.div`
@@ -79,11 +117,20 @@ const AllianceNames = styled.div`
   margin-bottom: 2px;
   text-transform: none;
   letter-spacing: 0;
+
+  @media (max-width: 480px) {
+    font-size: 0.62rem;
+    line-height: 1.15;
+  }
 `;
 
 const ScoreNum = styled.div`
   font-size: 1.35rem;
   line-height: 1.1;
+
+  @media (max-width: 480px) {
+    font-size: 1.12rem;
+  }
 `;
 
 const TrickPip = styled.div`
@@ -91,12 +138,20 @@ const TrickPip = styled.div`
   opacity: 0.8;
   margin-top: 2px;
   font-weight: 500;
+
+  @media (max-width: 480px) {
+    font-size: 0.58rem;
+  }
 `;
 
 const Divider = styled.div`
   width: 1px;
   height: 36px;
   background: rgba(255, 215, 0, 0.25);
+
+  @media (max-width: 480px) {
+    height: 28px;
+  }
 `;
 
 const EuchreScoreboard: React.FC = () => {

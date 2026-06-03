@@ -20,6 +20,15 @@ const Cluster = styled.div`
   & > * {
     pointer-events: auto;
   }
+
+  @media (max-width: 768px) {
+    right: max(128px, calc(env(safe-area-inset-right, 0px) + 116px));
+    gap: 6px;
+  }
+
+  @media (max-width: 480px) {
+    right: max(108px, calc(env(safe-area-inset-right, 0px) + 96px));
+  }
 `;
 
 const IconBtn = styled.button<{ $active?: boolean }>`

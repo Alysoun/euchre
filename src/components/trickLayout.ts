@@ -1,3 +1,5 @@
+import { viewportWidth } from './hudPanelLayout';
+
 /** Default center of played cards on the felt (% of table layer). */
 export const TRICK_CENTER_TOP_PCT = 52;
 export const TRICK_CENTER_LEFT_PCT = 50;
@@ -39,6 +41,16 @@ function migrateTiltAdjust(tiltAdjust: number | undefined): number | undefined {
 }
 
 export function defaultTrickLayout(): TrickLayout {
+  return defaultTrickLayoutForViewport();
+}
+
+export function defaultTrickLayoutForViewport(width = viewportWidth()): TrickLayout {
+  if (width <= 480) {
+    return { offsetX: 0, offsetY: 18, spread: 0.9, cardScale: 0.86, facePlayer: 100 };
+  }
+  if (width <= 768) {
+    return { offsetX: 0, offsetY: 22, spread: 0.95, cardScale: 0.92, facePlayer: 100 };
+  }
   return {
     offsetX: 0,
     offsetY: 28,

@@ -13,6 +13,7 @@ import {
   clampHudHandScale,
   clampSeatLabelOffset,
   clampSeatLabelScale,
+  clampStoredHudLayout,
   defaultGameLogLayout,
   defaultSeatLabelOffsets,
   clampTrickLayout,
@@ -65,6 +66,21 @@ export const HudLayoutProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     saveStoredHudLayout(stored);
   }, [stored]);
 
+  useEffect(() => {
+    let frame = 0;
+    const syncViewport = () => {
+      setStored((prev) =>
+        clampStoredHudLayout(prev, layoutEditMode, layoutEditGroup)
+      );
+    };
+    syncViewport();
+    frame = requestAnimationFrame(() => {
+      syncViewport();
+      requestAnimationFrame(syncViewport);
+    });
+    return () => cancelAnimationFrame(frame);
+  }, []);
+
   const isEditingLayoutGroup = useCallback(
     (group: LayoutEditGroup) => layoutEditMode && layoutEditGroup === group,
     [layoutEditMode, layoutEditGroup]
@@ -82,13 +98,9 @@ export const HudLayoutProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   useEffect(() => {
     const onResize = () => {
-      setStored((prev) => ({
-        ...prev,
-        gameLog: clampGameLogLayout(
-          prev.gameLog,
-          layoutEditMode && layoutEditGroup === 'log'
-        ),
-      }));
+      setStored((prev) =>
+        clampStoredHudLayout(prev, layoutEditMode, layoutEditGroup)
+      );
     };
     window.addEventListener('resize', onResize);
     window.addEventListener('orientationchange', onResize);

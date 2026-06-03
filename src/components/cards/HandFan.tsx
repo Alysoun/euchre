@@ -10,17 +10,17 @@ import {
 } from '../../utils/cardFanStack';
 import { playingCardHighlightCss, playingCardImgCss } from './playingCardImg';
 
-const FanContainer = styled.div<{ $count: number }>`
+const FanContainer = styled.div<{ $count: number; $cardBasePx: number }>`
   position: relative;
-  width: ${(p) => fanContainerSize(p.$count).width}px;
-  height: ${(p) => fanContainerSize(p.$count).height}px;
+  width: ${(p) => fanContainerSize(p.$count, p.$cardBasePx).width}px;
+  height: ${(p) => fanContainerSize(p.$count, p.$cardBasePx).height}px;
   margin: 0 auto;
   overflow: visible;
   transform-style: preserve-3d;
   perspective: 900px;
 `;
 
-const CardFace = styled.div<{ $dimmed?: boolean; $dragOver?: boolean }>`
+const CardFace = styled.div<{ $dimmed?: boolean; $dragOver?: boolean; $cardBasePx: number }>`
   background: #fff;
   border-radius: 6px;
   overflow: hidden;
@@ -29,7 +29,7 @@ const CardFace = styled.div<{ $dimmed?: boolean; $dragOver?: boolean }>`
   filter: ${(p) => (p.$dimmed ? 'brightness(0.72) saturate(0.85)' : 'none')};
 
   img {
-    width: 72px;
+    width: ${(p) => p.$cardBasePx}px;
     height: auto;
     display: block;
     pointer-events: none;
@@ -79,6 +79,8 @@ type HandFanProps = {
   dragDisabled?: boolean;
   /** Show hand face-up without playing (bidding) — reorder still allowed. */
   viewOnly?: boolean;
+  /** Card width in px before HUD hand scale transform. */
+  cardBasePx?: number;
 };
 
 const HandFan: React.FC<HandFanProps> = ({
@@ -89,6 +91,7 @@ const HandFan: React.FC<HandFanProps> = ({
   disabled,
   dragDisabled = false,
   viewOnly = false,
+  cardBasePx = 72,
 }) => {
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
@@ -115,7 +118,7 @@ const HandFan: React.FC<HandFanProps> = ({
   };
 
   return (
-    <FanContainer $count={cards.length} data-anim-anchor="human-hand">
+    <FanContainer $count={cards.length} $cardBasePx={cardBasePx} data-anim-anchor="human-hand">
       {cards.map((card, index) => {
         const playable = canPlayActions && legalIds.has(card.id);
         const dragging = dragIndex === index;
@@ -192,6 +195,7 @@ const HandFan: React.FC<HandFanProps> = ({
             }
           >
             <CardFace
+              $cardBasePx={cardBasePx}
               $dimmed={canPlayActions && !playable}
               $dragOver={dropTarget === index && dragIndex !== index}
             >

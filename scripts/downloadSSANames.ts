@@ -1,64 +1,65 @@
-import nodeFetch from 'node-fetch';
+import AdmZip from 'adm-zip';
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import AdmZip from 'adm-zip';
-import { parse, CsvError } from 'csv-parse';
 
 interface NameEntry {
-    name: string;
-    rank: number;
-    count: number;
-    gender?: 'M' | 'F';
+  name: string;
+  rank: number;
+  count: number;
+  gender?: 'M' | 'F';
+}
+
+function parseNameLines(data: string): NameEntry[] {
+  return data
+    .trim()
+    .split('\n')
+    .filter(Boolean)
+    .map((line, index) => {
+      const [name, gender, countStr] = line.split(',');
+      return {
+        name: name ?? '',
+        gender: gender === 'M' || gender === 'F' ? gender : undefined,
+        count: parseInt(countStr ?? '0', 10),
+        rank: index + 1,
+      };
+    });
+}
+
+function latestYearNameFile(zip: AdmZip): AdmZip.IZipEntry | undefined {
+  return zip
+    .getEntries()
+    .filter((entry: AdmZip.IZipEntry) => /^yob\d{4}\.txt$/.test(entry.entryName))
+    .sort((a: AdmZip.IZipEntry, b: AdmZip.IZipEntry) =>
+      b.entryName.localeCompare(a.entryName)
+    )[0];
 }
 
 async function downloadAndSaveSSANames(): Promise<void> {
-    console.log('Downloading SSA first name data...');
-    try {
-        // Fetch the ZIP file
-        const response = await nodeFetch('https://www.ssa.gov/oact/babynames/names.zip');
-        const buffer = await response.buffer();
-        const zip = new AdmZip(buffer);
-        
-        // Get the most recent year's file
-        const nameFile = zip.getEntries().find(entry => entry.entryName.startsWith('yob2022'));
-        if (!nameFile) {
-            throw new Error('Could not find name data in ZIP file');
-        }
+  console.log('Downloading SSA first name data...');
+  const response = await fetch('https://www.ssa.gov/oact/babynames/names.zip');
+  if (!response.ok) {
+    throw new Error(`SSA download failed: HTTP ${response.status}`);
+  }
 
-        const data = nameFile.getData().toString('utf8');
-        
-        // Parse the CSV data
-        const names: NameEntry[] = await new Promise((resolve, reject) => {
-            parse(data, {
-                skip_empty_lines: true
-            }, (error: CsvError | undefined, records: string[][]) => {
-                if (error) reject(error);
-                else {
-                    const entries = records.map((row, index) => ({
-                        name: row[0],
-                        gender: row[1] as 'M' | 'F',
-                        count: parseInt(row[2], 10),
-                        rank: index + 1
-                    }));
-                    resolve(entries);
-                }
-            });
-        });
+  const buffer = Buffer.from(await response.arrayBuffer());
+  const zip = new AdmZip(buffer);
+  const nameFile = latestYearNameFile(zip);
+  if (!nameFile) {
+    throw new Error('Could not find yobYYYY.txt name data in ZIP file');
+  }
 
-        // Take top 10,000 names
-        const topNames = names.slice(0, 10000);
+  console.log(`Using ${nameFile.entryName}`);
+  const data = nameFile.getData().toString('utf8');
+  const names = parseNameLines(data);
+  const topNames = names.slice(0, 10000);
 
-        // Save to file
-        const outputPath = path.resolve(__dirname, '../src/data/first-names.json');
-        await fs.writeFile(
-            outputPath,
-            JSON.stringify(topNames, null, 2)
-        );
+  const outputPath = path.resolve(__dirname, '../src/data/first-names.json');
+  await fs.writeFile(outputPath, JSON.stringify(topNames, null, 2));
 
-        console.log(`Successfully downloaded and saved ${topNames.length} first names to ${outputPath}`);
-    } catch (error) {
-        console.error('Error downloading SSA names:', error);
-    }
+  console.log(`Successfully downloaded and saved ${topNames.length} first names to ${outputPath}`);
 }
 
-downloadAndSaveSSANames(); 
+downloadAndSaveSSANames().catch((error: unknown) => {
+  console.error('Error downloading SSA names:', error);
+  process.exitCode = 1;
+});

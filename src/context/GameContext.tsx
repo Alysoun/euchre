@@ -190,7 +190,12 @@ export function GameProvider({ children }: { children: ReactNode }) {
   }, [state]);
 
   useEffect(() => {
-    if (state.phase !== 'playing') {
+    /** Let trick reveal/collect finish even after the reducer moves to handSummary/gameOver. */
+    if (
+      state.phase !== 'playing' &&
+      state.phase !== 'handSummary' &&
+      state.phase !== 'gameOver'
+    ) {
       if (pause.kind === 'trickReveal' || pause.kind === 'trickCollect') {
         clearPauseTimer();
         setPause({ kind: 'none' });

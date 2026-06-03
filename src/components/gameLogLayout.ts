@@ -3,6 +3,8 @@ import {
   MAX_GAME_LOG_WIDTH,
   MIN_GAME_LOG_HEIGHT,
   MIN_GAME_LOG_WIDTH,
+  BREAKPOINT_PHONE,
+  BREAKPOINT_TABLET,
   hudSafeAreaBottom,
   layoutEditBottomInset,
   layoutEditLogTopInset,
@@ -21,16 +23,32 @@ export type GameLogLayout = {
   collapsed: boolean;
 };
 
-export function defaultGameLogLayout(): GameLogLayout {
-  const w = viewportWidth();
-  const h = viewportHeight();
-  const tablet = w <= 768;
+export function defaultGameLogLayout(
+  viewportW = viewportWidth(),
+  viewportH = viewportHeight()
+): GameLogLayout {
+  const w = viewportW;
+  const h = viewportH;
+  const tablet = w <= BREAKPOINT_TABLET;
+  const narrow = w <= BREAKPOINT_PHONE;
+  const width = narrow ? Math.min(260, w - 16) : tablet ? 240 : 300;
   const height = tablet ? 160 : 180;
+  /** Keep the log off the bottom HUD on phones; top-right on wider screens. */
+  const x = narrow
+    ? 8
+    : tablet
+      ? Math.max(8, w - width - 8)
+      : 16;
+  const y = narrow
+    ? Math.max(56, 72)
+    : tablet
+      ? Math.max(56, 72)
+      : Math.max(100, h - 360);
 
   return {
-    x: tablet ? Math.max(8, w - 296) : 16,
-    y: tablet ? Math.max(56, 72) : Math.max(100, h - 360),
-    width: tablet ? 280 : 300,
+    x,
+    y,
+    width,
     height,
     collapsed: false,
   };
@@ -43,9 +61,11 @@ export function maxGameLogHeight(editing: boolean): number {
   return Math.min(MAX_GAME_LOG_HEIGHT_DESKTOP, h - 120);
 }
 
-export function maxGameLogWidth(editing: boolean): number {
-  const w = viewportWidth();
-  return editing ? Math.min(MAX_GAME_LOG_WIDTH, w - 16) : 360;
+export function maxGameLogWidth(editing: boolean, viewportW = viewportWidth()): number {
+  const w = viewportW;
+  if (editing) return Math.min(MAX_GAME_LOG_WIDTH, w - 16);
+  if (w <= BREAKPOINT_PHONE) return Math.min(MAX_GAME_LOG_WIDTH, w - 16);
+  return Math.min(360, w - 16);
 }
 
 export function minGameLogHeight(editing: boolean, collapsed: boolean): number {
@@ -119,7 +139,7 @@ export function loadLegacyGameLogLayout(): GameLogLayout | null {
     return clampGameLogLayout({
       x: typeof parsed.x === 'number' ? parsed.x : 16,
       y: typeof parsed.y === 'number' ? parsed.y : defaultGameLogLayout().y,
-      width: typeof parsed.width === 'number' ? Math.max(parsed.width, 280) : 300,
+      width: typeof parsed.width === 'number' ? Math.max(parsed.width, 240) : 300,
       height: typeof parsed.height === 'number' ? parsed.height : 160,
       collapsed: Boolean(parsed.collapsed),
     });

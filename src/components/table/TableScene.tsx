@@ -137,6 +137,10 @@ export const SetupOverlay = styled.div`
   z-index: 150;
   background: rgba(0, 0, 0, 0.5);
   pointer-events: auto;
+  padding: max(12px, env(safe-area-inset-top, 0px)) max(12px, env(safe-area-inset-right, 0px))
+    max(12px, env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px));
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 `;
 
 export const PhaseBanner = styled.div`

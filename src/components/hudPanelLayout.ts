@@ -6,7 +6,7 @@ import {
   loadLegacyGameLogLayout,
 } from './gameLogLayout';
 import type { TrickLayout } from './trickLayout';
-import { clampTrickLayout, defaultTrickLayout } from './trickLayout';
+import { clampTrickLayout, defaultTrickLayout, defaultTrickLayoutForViewport } from './trickLayout';
 import type { TrumpPillLayout } from './trumpPillLayout';
 import { clampTrumpPillLayout, defaultTrumpPillLayout } from './trumpPillLayout';
 
@@ -26,6 +26,7 @@ export {
   BASE_TRICK_CARD_PX,
   clampTrickLayout,
   defaultTrickLayout,
+  defaultTrickLayoutForViewport,
   MAX_TRICK_CARD_SCALE,
   MAX_TRICK_OFFSET_X,
   MAX_TRICK_OFFSET_Y,
@@ -82,6 +83,32 @@ export const MAX_HUD_DOCK_OFFSET_EDIT_PX = 340;
 export const MIN_HUD_HAND_SCALE = 0.72;
 export const MAX_HUD_HAND_SCALE = 1.5;
 export const DEFAULT_HUD_HAND_SCALE = 1;
+export const DEFAULT_HUD_HAND_SCALE_TABLET = 0.88;
+export const DEFAULT_HUD_HAND_SCALE_PHONE = 0.78;
+
+export const BREAKPOINT_PHONE = 480;
+export const BREAKPOINT_TABLET = 768;
+
+export function isPhoneViewport(width = viewportWidth()): boolean {
+  return width <= BREAKPOINT_PHONE;
+}
+
+export function isTabletViewport(width = viewportWidth()): boolean {
+  return width <= BREAKPOINT_TABLET;
+}
+
+export function defaultHudHandScaleForViewport(width = viewportWidth()): number {
+  if (width <= BREAKPOINT_PHONE) return DEFAULT_HUD_HAND_SCALE_PHONE;
+  if (width <= BREAKPOINT_TABLET) return DEFAULT_HUD_HAND_SCALE_TABLET;
+  return DEFAULT_HUD_HAND_SCALE;
+}
+
+/** Base card width (px) before HUD hand scale transform. */
+export function defaultHandCardBasePx(width = viewportWidth()): number {
+  if (width <= BREAKPOINT_PHONE) return 62;
+  if (width <= BREAKPOINT_TABLET) return 68;
+  return 72;
+}
 
 export function clampHudHandScale(scale: number): number {
   return Math.min(MAX_HUD_HAND_SCALE, Math.max(MIN_HUD_HAND_SCALE, scale));
@@ -203,9 +230,29 @@ export function defaultStoredHudLayout(): StoredHudLayout {
     seatLabelScale: defaultSeatLabelScaleForViewport(),
     seatLabelOffsets: defaultSeatLabelOffsets(),
     hudDockOffset: defaultHudDockOffset(),
-    hudHandScale: DEFAULT_HUD_HAND_SCALE,
+    hudHandScale: defaultHudHandScaleForViewport(),
     trickLayout: defaultTrickLayout(),
     trumpPill: defaultTrumpPillLayout(),
+  };
+}
+
+export function clampStoredHudLayout(
+  stored: StoredHudLayout,
+  layoutEditMode: boolean,
+  layoutEditGroup: LayoutEditGroup
+): StoredHudLayout {
+  return {
+    ...stored,
+    gameLog: clampGameLogLayout(
+      stored.gameLog,
+      layoutEditMode && layoutEditGroup === 'log'
+    ),
+    seatLabelScale: clampSeatLabelScale(stored.seatLabelScale),
+    seatLabelOffsets: stored.seatLabelOffsets,
+    hudDockOffset: clampHudDockOffset(stored.hudDockOffset.dx, stored.hudDockOffset.dy),
+    hudHandScale: clampHudHandScale(stored.hudHandScale),
+    trickLayout: clampTrickLayout(stored.trickLayout),
+    trumpPill: clampTrumpPillLayout(stored.trumpPill),
   };
 }
 
@@ -248,7 +295,7 @@ export function loadStoredHudLayout(): StoredHudLayout {
         hudHandScale: clampHudHandScale(
           typeof parsed.hudHandScale === 'number'
             ? parsed.hudHandScale
-            : DEFAULT_HUD_HAND_SCALE
+            : defaultHudHandScaleForViewport()
         ),
         trickLayout: clampTrickLayout(parsed.trickLayout ?? defaultTrickLayout()),
         trumpPill: clampTrumpPillLayout(parsed.trumpPill ?? defaultTrumpPillLayout()),

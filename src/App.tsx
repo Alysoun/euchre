@@ -6,7 +6,9 @@ import { HudAnchorProvider } from './context/HudAnchorContext';
 
 const AppContainer = styled.div`
   width: 100vw;
+  width: 100dvw;
   height: 100vh;
+  height: 100dvh;
   overflow: hidden;
 `;
 
