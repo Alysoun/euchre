@@ -171,10 +171,38 @@ function isEligibleNameTrumpSuit(state: GameState, suit: Suit): boolean {
   return suit !== state.turnedCard?.suit;
 }
 
+function turnedCardLabel(card: Card): string {
+  return `${card.value}${SUIT_SYMBOL[card.suit]}`;
+}
+
+function orderUpLogMessage(
+  state: GameState,
+  callerId: number,
+  turnedCard: Card,
+  trump: Suit,
+  alone: boolean
+): string {
+  const caller = playerName(state, callerId);
+  const turned = turnedCardLabel(turnedCard);
+  const dealerIsCaller = callerId === state.dealerId;
+
+  if (dealerIsCaller) {
+    return alone
+      ? `${caller} picks up turned ${turned} — going alone`
+      : `${caller} picks up turned ${turned}`;
+  }
+
+  if (alone) {
+    return `${caller} orders up ${SUIT_SYMBOL[trump]} (turned ${turned}) — going alone`;
+  }
+  return `${caller} orders up ${SUIT_SYMBOL[trump]} (turned ${turned}) — dealer picks up`;
+}
+
 function orderUp(state: GameState, callerId: number, goAlone: boolean): GameState {
   if (!state.turnedCard) return state;
-  const trump = state.turnedCard.suit;
-  const dealerCards = [...state.players[state.dealerId].cards, state.turnedCard];
+  const turnedCard = state.turnedCard;
+  const trump = turnedCard.suit;
+  const dealerCards = [...state.players[state.dealerId].cards, turnedCard];
   const alone = goAlone;
   return appendLog(
     {
@@ -192,12 +220,7 @@ function orderUp(state: GameState, callerId: number, goAlone: boolean): GameStat
       phase: 'dealerDiscard',
       currentPlayer: state.dealerId,
     },
-    log(
-      alone
-        ? `${playerName(state, callerId)} orders up ${SUIT_SYMBOL[trump]} — going alone`
-        : `${playerName(state, callerId)} orders up ${SUIT_SYMBOL[trump]} — dealer picks up`,
-      'success'
-    )
+    log(orderUpLogMessage(state, callerId, turnedCard, trump, alone), 'success')
   );
 }
 
@@ -415,12 +438,16 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       if (!dealer.cards.some((c) => c.id === action.card.id)) return state;
       const cards = removeCard(dealer.cards, action.card);
       if (cards.length !== CARDS_PER_HAND) return state;
+      if (!state.trump) return state;
       const players = state.players.map((p, i) =>
         i === state.dealerId ? { ...p, cards } : p
       );
       return appendLog(
         startPlayingAfterDiscard({ ...state, players }),
-        log(`${playerName(state, state.dealerId)} discards`, 'info')
+        log(
+          `${playerName(state, state.dealerId)} discards ${formatCardForLog(action.card, state.trump)}`,
+          'info'
+        )
       );
     }
 

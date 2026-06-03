@@ -262,4 +262,51 @@ describe('euchre reducer', () => {
     expect(named.trumpCallerId).toBe(0);
     expect(named.log.some((e) => e.message.includes('stick the dealer'))).toBe(true);
   });
+
+  it('logs turned card when dealer orders up alone', () => {
+    let state = startAllAi();
+    const turned = createCard('hearts', '10');
+    state = {
+      ...state,
+      dealerId: 0,
+      phase: 'bidding',
+      biddingRound: 1,
+      passesThisRound: 3,
+      currentPlayer: 0,
+      turnedCard: turned,
+    };
+    state = gameReducer(state, {
+      type: 'BID',
+      action: 'orderUp',
+      goAlone: true,
+    });
+    expect(state.log.at(-1)?.message).toBe(
+      `${state.players[0].name} picks up turned 10♥ — going alone`
+    );
+  });
+
+  it('logs which card the dealer discards', () => {
+    let state = startAllAi();
+    const discard = createCard('spades', 'A');
+    const dealerHand = [
+      createCard('diamonds', 'A'),
+      createCard('diamonds', 'K'),
+      createCard('clubs', '9'),
+      createCard('hearts', '9'),
+      createCard('spades', '9'),
+      discard,
+    ];
+    state = {
+      ...state,
+      dealerId: 0,
+      phase: 'dealerDiscard',
+      trump: 'diamonds',
+      currentPlayer: 0,
+      players: state.players.map((p, i) =>
+        i === 0 ? { ...p, cards: dealerHand } : p
+      ),
+    };
+    state = gameReducer(state, { type: 'DEALER_DISCARD', card: discard });
+    expect(state.log.at(-1)?.message).toContain('discards A♠');
+  });
 });
