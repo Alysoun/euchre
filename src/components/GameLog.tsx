@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
 import Draggable, { DraggableData } from 'react-draggable';
 import {
@@ -172,6 +172,7 @@ const GameLog: React.FC = () => {
   const groupActive = isEditingLayoutGroup('log');
   const dimmed = layoutEditMode && !groupActive;
   const nodeRef = useRef<HTMLDivElement>(null);
+  const logBodyRef = useRef<HTMLDivElement>(null);
   const logAnchorRef = useHudAnchorRef('log');
   const [copied, setCopied] = useState(false);
   const canExport = hasExportableSessionLog(state);
@@ -202,6 +203,12 @@ const GameLog: React.FC = () => {
   const handleDownload = useCallback(() => {
     downloadSessionLog(state);
   }, [state]);
+
+  useEffect(() => {
+    const body = logBodyRef.current;
+    if (!body || gameLogLayout.collapsed) return;
+    body.scrollTop = body.scrollHeight;
+  }, [state.log, gameLogLayout.collapsed]);
 
   if (state.phase === 'setup') return null;
 
@@ -267,8 +274,8 @@ const GameLog: React.FC = () => {
           </HeaderActions>
         </LogHeader>
         {!gameLogLayout.collapsed && (
-          <LogBody>
-            {[...state.log].reverse().map((entry) => (
+          <LogBody ref={logBodyRef}>
+            {state.log.map((entry) => (
               <Entry key={entry.id} $type={entry.type}>
                 {entry.message}
               </Entry>
