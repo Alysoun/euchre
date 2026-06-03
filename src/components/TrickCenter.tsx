@@ -193,10 +193,7 @@ const TrickCenter: React.FC = () => {
 
         <AnimatePresence>
           {plays.map((play, stackIndex) => {
-            const nudge = trickFanOffset(play.playerId, trickLayout.spread, {
-              goAlone: state.goAlone,
-              stackIndex,
-            });
+            const nudge = trickFanOffset(play.playerId, trickLayout.spread);
             const playKey = `${play.playerId}-${play.card.id}`;
             const highlight = !play.preview && lastKey === playKey;
             const sizePx = highlight ? highlightPx : cardPx;

@@ -1,4 +1,4 @@
-import type { Card, GameState, Suit, TrickPlay } from './types';
+import type { Card, GameState, Suit, TeamId, TrickPlay } from './types';
 import { SUITS } from './constants';
 import {
   effectiveSuit,
@@ -24,12 +24,12 @@ export function trumpHandScore(hand: Card[], trump: Suit): number {
   return score;
 }
 
-function turnedSuitTrumpScore(hand: Card[], turnedSuit: Suit): number {
-  return trumpHandScore(hand, turnedSuit);
-}
-
 function trumpCount(hand: Card[], trump: Suit): number {
   return hand.filter((c) => effectiveSuit(c, trump) === trump).length;
+}
+
+function hasBower(hand: Card[], trump: Suit): boolean {
+  return hand.some((c) => isRightBower(c, trump) || isLeftBower(c, trump));
 }
 
 export function bestNameTrumpSuit(
@@ -47,34 +47,101 @@ export function bestNameTrumpSuit(
   return best;
 }
 
-const ORDER_THRESHOLDS: Record<EuchreAIDifficulty, number> = {
-  easy: 3.5,
-  medium: 4.75,
-  hard: 6,
+const BASE_ORDER_THRESHOLDS: Record<EuchreAIDifficulty, number> = {
+  easy: 3.75,
+  medium: 5.25,
+  hard: 6.25,
 };
 
-const NAME_THRESHOLDS: Record<EuchreAIDifficulty, number> = {
-  easy: 3,
-  medium: 4.25,
-  hard: 5.25,
+const BASE_NAME_THRESHOLDS: Record<EuchreAIDifficulty, number> = {
+  easy: 3.25,
+  medium: 4.75,
+  hard: 5.75,
 };
+
+/** Extra margin when the dealer — not the caller — receives the turned card. */
+const NON_DEALER_ORDER_MARGIN: Record<EuchreAIDifficulty, number> = {
+  easy: 0.75,
+  medium: 1.35,
+  hard: 2,
+};
+
+function bidThresholdAdjust(
+  team: TeamId,
+  score: Record<TeamId, number>,
+  difficulty: EuchreAIDifficulty
+): number {
+  const us = score[team];
+  const them = score[(1 - team) as TeamId];
+  let adjust = 0;
+  if (us >= 8) adjust += difficulty === 'hard' ? 0.9 : 0.55;
+  if (us >= 9) adjust += 0.55;
+  if (them >= 8 && us + 2 <= them) adjust -= difficulty === 'hard' ? 0.35 : 0.2;
+  return adjust;
+}
+
+function orderUpThreshold(
+  callerIsDealer: boolean,
+  team: TeamId,
+  teamScore: Record<TeamId, number>,
+  difficulty: EuchreAIDifficulty
+): number {
+  let threshold = BASE_ORDER_THRESHOLDS[difficulty];
+  if (!callerIsDealer) threshold += NON_DEALER_ORDER_MARGIN[difficulty];
+  threshold += bidThresholdAdjust(team, teamScore, difficulty);
+  return threshold;
+}
+
+function nameTrumpThreshold(
+  team: TeamId,
+  teamScore: Record<TeamId, number>,
+  difficulty: EuchreAIDifficulty
+): number {
+  return BASE_NAME_THRESHOLDS[difficulty] + bidThresholdAdjust(team, teamScore, difficulty);
+}
+
+function ownHandSupportsOrderUp(hand: Card[], trump: Suit): boolean {
+  const trumps = trumpCount(hand, trump);
+  if (trumps >= 2) return true;
+  if (trumps >= 1 && hasBower(hand, trump)) return true;
+  return false;
+}
 
 export function shouldOrderUp(
   hand: Card[],
-  turnedSuit: Suit,
+  turnedCard: Card,
+  callerId: number,
+  dealerId: number,
+  teamScore: Record<TeamId, number>,
   difficulty: EuchreAIDifficulty
 ): boolean {
-  const score = turnedSuitTrumpScore(hand, turnedSuit);
-  return score >= ORDER_THRESHOLDS[difficulty];
+  const trump = turnedCard.suit;
+  const callerIsDealer = callerId === dealerId;
+  const evalHand = callerIsDealer ? [...hand, turnedCard] : hand;
+  const score = trumpHandScore(evalHand, trump);
+  const threshold = orderUpThreshold(
+    callerIsDealer,
+    playerTeam(callerId) as TeamId,
+    teamScore,
+    difficulty
+  );
+
+  if (!callerIsDealer && !ownHandSupportsOrderUp(hand, trump)) return false;
+
+  return score >= threshold;
 }
 
 export function shouldNameTrump(
   hand: Card[],
   turnedSuit: Suit | null,
+  playerId: number,
+  teamScore: Record<TeamId, number>,
   difficulty: EuchreAIDifficulty
 ): { suit: Suit } | null {
   const best = bestNameTrumpSuit(hand, turnedSuit);
-  if (!best || best.score < NAME_THRESHOLDS[difficulty]) return null;
+  if (!best) return null;
+  const threshold = nameTrumpThreshold(playerTeam(playerId) as TeamId, teamScore, difficulty);
+  if (best.score < threshold) return null;
   return { suit: best.suit };
 }
 
@@ -85,7 +152,7 @@ export function pickForcedNameTrump(hand: Card[], turnedSuit: Suit | null): Suit
   return SUITS.find((suit) => suit !== turnedSuit) ?? SUITS[0];
 }
 
-/** Lone hands need both bowers or a near-march trump stack — not just a decent call. */
+/** Lone hands need both bowers and enough trump to march — rare even on hard. */
 export function shouldGoAlone(
   hand: Card[],
   trump: Suit,
@@ -97,15 +164,15 @@ export function shouldGoAlone(
   const hasLeft = hand.some((c) => isLeftBower(c, trump));
   const trumps = trumpCount(hand, trump);
 
-  if (hasRight && hasLeft && trumps >= 4 && score >= 11) return true;
-  if (hasRight && hasLeft && score >= 10.5) return true;
-  if (hasRight && trumps >= 3 && score >= 11.5) return true;
+  if (!hasRight || !hasLeft) return false;
+  if (trumps >= 4 && score >= 11.75) return true;
+  if (trumps >= 3 && score >= 12.25) return true;
   return false;
 }
 
 /**
- * Go-alone on order-up: only the dealer adds the turned card to their hand.
- * Callers who are not dealer must not treat the kitty as theirs.
+ * Go alone on order-up only when the caller is dealer and picks up the turned card.
+ * Ordering partner up and going alone gives the kitty to your partner, not you.
  */
 export function shouldGoAloneOnOrderUp(
   hand: Card[],
@@ -114,15 +181,8 @@ export function shouldGoAloneOnOrderUp(
   callerIsDealer: boolean,
   difficulty: EuchreAIDifficulty
 ): boolean {
-  if (difficulty !== 'hard') return false;
-  const evalHand = callerIsDealer ? [...hand, turnedCard] : hand;
-  if (!callerIsDealer) {
-    const hasRight = hand.some((c) => isRightBower(c, trump));
-    const hasLeft = hand.some((c) => isLeftBower(c, trump));
-    if (!hasRight || !hasLeft) return false;
-    if (trumpCount(hand, trump) < 3) return false;
-  }
-  return shouldGoAlone(evalHand, trump, difficulty);
+  if (difficulty !== 'hard' || !callerIsDealer) return false;
+  return shouldGoAlone([...hand, turnedCard], trump, difficulty);
 }
 
 export function pickDiscard(hand: Card[], trump: Suit): Card {
@@ -164,6 +224,7 @@ function pickLead(hand: Card[], trump: Suit, state: GameState, playerId: number)
   const leadSuit = trump;
   const trumps = hand.filter((c) => effectiveSuit(c, trump) === trump);
   const offTrump = hand.filter((c) => effectiveSuit(c, trump) !== trump);
+  const makerTricks = state.makerTeam !== null ? state.tricksWon[state.makerTeam] : 0;
 
   if (state.goAlone && state.lonerId === playerId) {
     const right = hand.find((c) => isRightBower(c, trump));
@@ -171,7 +232,7 @@ function pickLead(hand: Card[], trump: Suit, state: GameState, playerId: number)
     const left = hand.find((c) => isLeftBower(c, trump));
     if (left) return left;
     if (trumps.length > 0) {
-      return sortByStrength(trumps, trump, leadSuit, false)[0];
+      return sortByStrength(trumps, trump, leadSuit, true)[0];
     }
   }
 
@@ -185,8 +246,22 @@ function pickLead(hand: Card[], trump: Suit, state: GameState, playerId: number)
   }
 
   const isMaker = state.makerTeam === playerTeam(playerId);
-  if (isMaker && trumps.length > 0 && state.tricksWon[state.makerTeam!] < 3) {
-    return sortByStrength(trumps, trump, leadSuit, false)[0];
+  if (isMaker && trumps.length >= 2 && makerTricks === 0) {
+    return sortByStrength(trumps, trump, leadSuit, true)[0];
+  }
+  if (isMaker && trumps.length === 1 && makerTricks < 3 && offTrump.length > 0) {
+    const bySuit = new Map<Suit, Card[]>();
+    for (const c of offTrump) {
+      const s = effectiveSuit(c, trump);
+      const list = bySuit.get(s) ?? [];
+      list.push(c);
+      bySuit.set(s, list);
+    }
+    let shortest: Card[] | null = null;
+    for (const list of bySuit.values()) {
+      if (!shortest || list.length < shortest.length) shortest = list;
+    }
+    if (shortest) return sortByStrength(shortest, trump, leadSuit, true)[0];
   }
 
   if (offTrump.length > 0) {
@@ -234,6 +309,17 @@ function pickFollow(
     if (defendingLoner) {
       return sortByStrength(winners, trump, leadSuit, false)[0];
     }
+    const makerTeam = state.makerTeam;
+    const isDefender =
+      makerTeam !== null && playerTeam(playerId) !== makerTeam;
+    if (isDefender && winners.some((c) => effectiveSuit(c, trump) === trump)) {
+      return sortByStrength(
+        winners.filter((c) => effectiveSuit(c, trump) === trump),
+        trump,
+        leadSuit,
+        true
+      )[0];
+    }
     return sortByStrength(winners, trump, leadSuit, true)[0];
   }
 
@@ -276,14 +362,13 @@ export function applyDifficultyToPlay(
 
   const roll = Math.random();
   if (difficulty === 'hard') {
-    if (roll < 0.02) return randomPick(legal.filter((c) => c.id !== expertCard.id) || legal);
+    if (roll < 0.015) return randomPick(legal.filter((c) => c.id !== expertCard.id) || legal);
     return expertCard;
   }
   if (difficulty === 'medium') {
     if (roll < 0.08) return randomPick(legal);
     return expertCard;
   }
-  // easy — noticeable mistakes
   if (roll < 0.38) return randomPick(legal);
   if (roll < 0.52) {
     const sorted = sortByStrength(
@@ -300,21 +385,28 @@ export function applyDifficultyToPlay(
 export function applyDifficultyToOrderUp(
   wouldOrder: boolean,
   hand: Card[],
-  turnedSuit: Suit,
+  turnedCard: Card,
+  callerId: number,
+  dealerId: number,
+  teamScore: Record<TeamId, number>,
   difficulty: EuchreAIDifficulty
 ): boolean {
-  const score = turnedSuitTrumpScore(hand, turnedSuit);
+  const trump = turnedCard.suit;
+  const callerIsDealer = callerId === dealerId;
+  const evalHand = callerIsDealer ? [...hand, turnedCard] : hand;
+  const score = trumpHandScore(evalHand, trump);
   const roll = Math.random();
   if (difficulty === 'easy') {
     if (wouldOrder && roll < 0.28) return false;
-    if (!wouldOrder && score >= 2 && roll < 0.22) return true;
+    if (!wouldOrder && score >= 2.5 && roll < 0.2) return true;
     return wouldOrder;
   }
   if (difficulty === 'medium') {
-    if (wouldOrder && score < 5 && roll < 0.12) return false;
+    if (wouldOrder && score < 5.5 && roll < 0.12) return false;
     return wouldOrder;
   }
-  if (!wouldOrder && score >= ORDER_THRESHOLDS.hard && roll < 0.03) return true;
+  if (wouldOrder && !callerIsDealer && score < 8.5 && roll < 0.08) return false;
+  if (!wouldOrder && score >= BASE_ORDER_THRESHOLDS.hard + 1.5 && roll < 0.02) return true;
   return wouldOrder;
 }
 
@@ -328,11 +420,11 @@ export function applyDifficultyToNameTrump(
   const roll = Math.random();
   if (difficulty === 'easy') {
     if (pick && roll < 0.3) return null;
-    if (!pick && best && best.score >= 2 && roll < 0.18) return { suit: best.suit };
+    if (!pick && best && best.score >= 2.5 && roll < 0.16) return { suit: best.suit };
     return pick;
   }
   if (difficulty === 'medium') {
-    if (pick && best && best.score < 4.5 && roll < 0.1) return null;
+    if (pick && best && best.score < 5 && roll < 0.1) return null;
     return pick;
   }
   return pick;

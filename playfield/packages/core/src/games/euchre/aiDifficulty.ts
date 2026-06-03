@@ -12,7 +12,7 @@ export const EUCHRE_AI_DIFFICULTY_LABELS: Record<EuchreAIDifficulty, string> = {
 export const EUCHRE_AI_DIFFICULTY_HINTS: Record<EuchreAIDifficulty, string> = {
   easy: 'Forgiving bids and occasional loose plays — good for learning',
   medium: 'Solid club-style play without going alone much',
-  hard: 'Tighter bidding, smarter leads, and rare lone attempts',
+  hard: 'Tighter bids, fixed-seat trick play, and rare lone attempts',
 };
 
 export const DEFAULT_EUCHRE_AI_DIFFICULTY: EuchreAIDifficulty = 'easy';

@@ -36,16 +36,31 @@ export function getAIAction(state: GameState): AIAction {
   const difficulty = tableDifficulty(state);
 
   if (state.phase === 'bidding' && state.turnedCard) {
-    const turned = state.turnedCard.suit;
-    let order = shouldOrderUp(player.cards, turned, difficulty);
-    order = applyDifficultyToOrderUp(order, player.cards, turned, difficulty);
+    const turned = state.turnedCard;
+    let order = shouldOrderUp(
+      player.cards,
+      turned,
+      player.id,
+      state.dealerId,
+      state.score,
+      difficulty
+    );
+    order = applyDifficultyToOrderUp(
+      order,
+      player.cards,
+      turned,
+      player.id,
+      state.dealerId,
+      state.score,
+      difficulty
+    );
     if (!order) {
       return { type: 'BID', action: 'pass' };
     }
     const alone = shouldGoAloneOnOrderUp(
       player.cards,
-      state.turnedCard,
       turned,
+      turned.suit,
       player.id === state.dealerId,
       difficulty
     );
@@ -58,7 +73,13 @@ export function getAIAction(state: GameState): AIAction {
 
   if (state.phase === 'biddingRound2') {
     const pick = applyDifficultyToNameTrump(
-      shouldNameTrump(player.cards, state.turnedCard?.suit ?? null, difficulty),
+      shouldNameTrump(
+        player.cards,
+        state.turnedCard?.suit ?? null,
+        player.id,
+        state.score,
+        difficulty
+      ),
       player.cards,
       state.turnedCard?.suit ?? null,
       difficulty

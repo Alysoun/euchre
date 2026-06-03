@@ -10,6 +10,8 @@ import {
 } from '../aiStrategy';
 import type { GameState } from '../types';
 
+const ZERO_SCORE = { 0: 0, 1: 0 } as const;
+
 describe('aiStrategy', () => {
   it('scores bowers highly', () => {
     const trump = 'hearts' as const;
@@ -21,7 +23,9 @@ describe('aiStrategy', () => {
       createCard('spades', '9'),
     ];
     expect(trumpHandScore(hand, trump)).toBeGreaterThan(10);
-    expect(shouldOrderUp(hand, trump, 'hard')).toBe(true);
+    expect(
+      shouldOrderUp(hand, createCard('hearts', 'K'), 2, 2, ZERO_SCORE, 'hard')
+    ).toBe(true);
   });
 
   it('partner-winning trick ducks low', () => {
@@ -79,7 +83,7 @@ describe('aiStrategy', () => {
 
     const march = [
       createCard('diamonds', 'J'),
-      createCard('clubs', 'J'),
+      createCard('hearts', 'J'),
       createCard('diamonds', 'A'),
       createCard('diamonds', 'K'),
       createCard('diamonds', '10'),
@@ -88,7 +92,7 @@ describe('aiStrategy', () => {
     expect(shouldGoAlone(march, trump, 'hard')).toBe(true);
   });
 
-  it('does not treat the kitty as loner hand when caller is not dealer', () => {
+  it('does not go alone on order-up when partner is dealer', () => {
     const trump = 'diamonds' as const;
     const turned = createCard('diamonds', 'K');
     const hand = [
@@ -100,16 +104,59 @@ describe('aiStrategy', () => {
     ];
     expect(
       shouldGoAloneOnOrderUp(hand, turned, trump, false, 'hard')
+    ).toBe(false);
+    expect(
+      shouldGoAloneOnOrderUp(hand, turned, trump, true, 'hard')
     ).toBe(true);
-    const withoutLeft = [
-      createCard('diamonds', 'J'),
-      createCard('diamonds', 'A'),
-      createCard('spades', '9'),
+  });
+
+  it('requires stronger hand to order up for partner than for self', () => {
+    const trump = 'hearts' as const;
+    const turned = createCard('hearts', 'K');
+    const marginal = [
+      createCard('hearts', 'A'),
       createCard('hearts', '9'),
       createCard('clubs', '9'),
+      createCard('diamonds', '9'),
+      createCard('spades', '9'),
     ];
     expect(
-      shouldGoAloneOnOrderUp(withoutLeft, turned, trump, false, 'hard')
+      shouldOrderUp(marginal, turned, 2, 2, ZERO_SCORE, 'hard')
+    ).toBe(true);
+    expect(
+      shouldOrderUp(marginal, turned, 2, 0, ZERO_SCORE, 'hard')
     ).toBe(false);
+  });
+
+  it('maker with multiple trump leads low trump to pull', () => {
+    const trump = 'spades' as const;
+    const state = {
+      phase: 'playing',
+      trump,
+      leadSuit: null,
+      currentTrick: [],
+      makerTeam: 0,
+      goAlone: false,
+      lonerId: null,
+      tricksWon: { 0: 0, 1: 0 },
+      players: [
+        {
+          id: 0,
+          name: 'M',
+          isHuman: false,
+          team: 0,
+          cards: [
+            createCard('spades', 'A'),
+            createCard('spades', '9'),
+            createCard('clubs', 'K'),
+          ],
+        },
+      ],
+      currentPlayer: 0,
+    } as GameState;
+
+    const play = pickExpertPlay(state, 0);
+    expect(play.suit).toBe('spades');
+    expect(play.value).toBe('9');
   });
 });
