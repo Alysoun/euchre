@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { createCard } from '@playfield/core/euchre';
+import { createCard, effectiveSuit } from '@playfield/core/euchre';
 import type { GameState } from '../../types/GameTypes';
-import { revealDurationMs, trickPlaysAfterAction } from '../trickReveal';
+import {
+  completedTrickFromAction,
+  revealDurationMs,
+  trickPlaysAfterAction,
+} from '../trickReveal';
 
 describe('trickReveal', () => {
   it('pauses only when the fourth card completes a trick', () => {
@@ -55,5 +59,27 @@ describe('trickReveal', () => {
       currentTrick: [...prev.currentTrick, { playerId: 1, card }],
     } as GameState;
     expect(trickPlaysAfterAction(prev, { type: 'PLAY_CARD', card }, next)).toBeNull();
+  });
+
+  it('uses effective suit when left bower leads before leadSuit is stored', () => {
+    const card = createCard('diamonds', 'J');
+    const prev = {
+      phase: 'playing',
+      trump: 'hearts',
+      leadSuit: null,
+      currentPlayer: 1,
+      goAlone: true,
+      lonerId: 0,
+      currentTrick: [
+        { playerId: 3, card: createCard('diamonds', 'J') },
+        { playerId: 0, card: createCard('hearts', 'K') },
+      ],
+    } as GameState;
+    const completed = completedTrickFromAction(prev, { type: 'PLAY_CARD', card }, {
+      ...prev,
+      currentTrick: [],
+    } as GameState);
+    expect(completed?.winnerId).toBe(3);
+    expect(effectiveSuit(card, 'hearts')).toBe('hearts');
   });
 });

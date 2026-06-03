@@ -1,5 +1,5 @@
 import type { GameAction, GameState, TrickPlay } from '../types/GameTypes';
-import { trickWinner } from '@playfield/core/euchre';
+import { effectiveSuit, trickWinner } from '@playfield/core/euchre';
 
 /** Pause only when a trick is complete (last card played), before the trick clears. */
 export const TRICK_COMPLETE_REVEAL_MS = 2800;
@@ -24,7 +24,9 @@ export function completedTrickFromAction(
 ): { trick: TrickPlay[]; winnerId: number } | null {
   const trick = trickPlaysAfterAction(prev, action, next);
   if (!trick || !prev.trump) return null;
-  const leadSuit = prev.leadSuit ?? trick[0]?.card.suit;
+  const leadSuit =
+    prev.leadSuit ??
+    (trick[0] ? effectiveSuit(trick[0].card, prev.trump) : null);
   if (!leadSuit) return null;
   return { trick, winnerId: trickWinner(trick, prev.trump, leadSuit) };
 }

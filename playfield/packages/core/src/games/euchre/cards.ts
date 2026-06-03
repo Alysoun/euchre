@@ -1,6 +1,6 @@
 import { shuffle } from '../../deck/standard52';
 import type { Card, EuchreRank, Suit } from './types';
-import { RANKS, SUITS } from './constants';
+import { RANKS, SUITS, SUIT_SYMBOL } from './constants';
 
 const RANK_ORDER: Record<EuchreRank, number> = {
   '9': 9,
@@ -69,6 +69,14 @@ export function hasCard(hand: Card[], card: Card): boolean {
 
 export function rankValue(value: EuchreRank): number {
   return RANK_ORDER[value];
+}
+
+/** Human-readable card label for logs (marks bowers when trump is known). */
+export function formatCardForLog(card: Card, trump: Suit): string {
+  const label = `${card.value}${SUIT_SYMBOL[card.suit]}`;
+  if (isRightBower(card, trump)) return `${label} (right bower)`;
+  if (isLeftBower(card, trump)) return `${label} (left bower)`;
+  return label;
 }
 
 export { RANK_ORDER };

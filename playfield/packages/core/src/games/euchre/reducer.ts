@@ -1,4 +1,4 @@
-import { shuffle, createEuchreDeck, removeCard, effectiveSuit } from './cards';
+import { shuffle, createEuchreDeck, removeCard, effectiveSuit, formatCardForLog } from './cards';
 import {
   DEFAULT_EUCHRE_AI_DIFFICULTY,
   normalizeEuchreAIDifficulty,
@@ -14,7 +14,7 @@ import {
   scoreHand,
   trickSizeForState,
 } from './teams';
-import { getLegalPlays, trickWinner, validatePlay } from './trickPlay';
+import { getLegalPlays, trickLeader, trickWinner, validatePlay } from './trickPlay';
 import type {
   BidAction,
   Card,
@@ -245,6 +245,7 @@ function completeTrick(state: GameState): GameState {
     return state;
   }
   const winnerId = trickWinner(state.currentTrick, state.trump, state.leadSuit);
+  const winningPlay = trickLeader(state.currentTrick, state.trump, state.leadSuit);
   const team = playerTeam(winnerId);
   const tricksWon = { ...state.tricksWon, [team]: state.tricksWon[team] + 1 };
   let next = appendLog(
@@ -255,7 +256,10 @@ function completeTrick(state: GameState): GameState {
       leadSuit: null,
       currentPlayer: winnerId,
     },
-    log(`${playerName(state, winnerId)} wins the trick`, 'info')
+    log(
+      `${playerName(state, winnerId)} wins the trick with ${formatCardForLog(winningPlay.card, state.trump)}`,
+      'info'
+    )
   );
   if (tricksWon[0] + tricksWon[1] >= 5) {
     return finishHand(next);
