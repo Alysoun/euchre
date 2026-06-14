@@ -221,7 +221,11 @@ function sortByStrength(cards: Card[], trump: Suit, leadSuit: Suit, asc = true):
   return [...cards].sort((a, b) => {
     const da = trickStrength(a, trump, leadSuit);
     const db = trickStrength(b, trump, leadSuit);
-    return asc ? da - db : db - da;
+    if (da !== db) return asc ? da - db : db - da;
+    const ra = rankValue(a.value);
+    const rb = rankValue(b.value);
+    if (ra !== rb) return asc ? ra - rb : rb - ra;
+    return a.id.localeCompare(b.id);
   });
 }
 

@@ -128,6 +128,48 @@ describe('aiStrategy', () => {
     ).toBe(false);
   });
 
+  it('void in lead suit sloughs lowest rank off trump', () => {
+    const trump = 'hearts' as const;
+    const trick = [
+      { playerId: 0, card: createCard('spades', '9') },
+      { playerId: 1, card: createCard('spades', '10') },
+    ];
+    const state = {
+      phase: 'playing',
+      trump,
+      leadSuit: 'spades' as const,
+      currentTrick: trick,
+      cardsPlayed: [],
+      makerTeam: 1,
+      goAlone: false,
+      lonerId: null,
+      dealerId: 0,
+      tricksWon: { 0: 0, 1: 0 },
+      players: [
+        { id: 0, name: 'L', isHuman: false, team: 0, cards: [] },
+        { id: 1, name: 'W', isHuman: false, team: 1, cards: [] },
+        {
+          id: 2,
+          name: 'D',
+          isHuman: false,
+          team: 0,
+          cards: [
+            createCard('clubs', 'A'),
+            createCard('clubs', '9'),
+            createCard('clubs', 'J'),
+            createCard('diamonds', 'K'),
+          ],
+        },
+        { id: 3, name: 'O', isHuman: false, team: 1, cards: [] },
+      ],
+      currentPlayer: 2,
+    } as GameState;
+
+    const play = pickExpertPlay(state, 2);
+    expect(play.suit).toBe('clubs');
+    expect(play.value).toBe('9');
+  });
+
   it('maker with multiple trump leads low trump to pull', () => {
     const trump = 'spades' as const;
     const state = {
