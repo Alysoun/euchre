@@ -65,6 +65,8 @@ export interface GameState {
   goAlone: boolean;
   lonerId: number | null;
   currentTrick: TrickPlay[];
+  /** Cards played this hand (completed tricks + dealer discard), not the in-progress trick. */
+  cardsPlayed: Card[];
   leadSuit: Suit | null;
   tricksWon: Record<TeamId, number>;
   score: Record<TeamId, number>;

@@ -10,6 +10,11 @@ import {
 import { getLegalPlays, trickLeader } from './trickPlay';
 import { partnerId, playerTeam } from './teams';
 import type { EuchreAIDifficulty } from './aiDifficulty';
+import {
+  filterSafeWinners,
+  gatherPlayedCards,
+  opponentsStillToAct,
+} from './aiPlayMemory';
 
 /** Trump strength score for bidding (higher = stronger call). */
 export function trumpHandScore(hand: Card[], trump: Suit): number {
@@ -283,6 +288,22 @@ function pickLead(hand: Card[], trump: Suit, state: GameState, playerId: number)
   return hand[0];
 }
 
+function sloughLowest(
+  legal: Card[],
+  trump: Suit,
+  leadSuit: Suit,
+  exclude?: Card[]
+): Card {
+  const pool =
+    exclude && exclude.length > 0
+      ? legal.filter((c) => !exclude.some((x) => x.id === c.id))
+      : legal;
+  if (pool.length === 0) return sortByStrength(legal, trump, leadSuit, true)[0];
+  const offTrump = pool.filter((c) => effectiveSuit(c, trump) !== trump);
+  const discard = offTrump.length > 0 ? offTrump : pool;
+  return sortByStrength(discard, trump, leadSuit, true)[0];
+}
+
 function pickFollow(
   state: GameState,
   playerId: number,
@@ -301,8 +322,12 @@ function pickFollow(
     playerTeam(state.lonerId) !== playerTeam(playerId);
 
   if (partnerWinning) {
-    return sortByStrength(legal, trump, leadSuit, true)[0];
+    return sloughLowest(legal, trump, leadSuit);
   }
+
+  const played = gatherPlayedCards(state);
+  const myHand = state.players[playerId].cards;
+  const opponentsStill = opponentsStillToAct(state, playerId, trick);
 
   const winners = legal.filter((c) => cardWinsIfPlayed(c, playerId, trick, trump, leadSuit));
   if (winners.length > 0) {
@@ -312,18 +337,34 @@ function pickFollow(
     const makerTeam = state.makerTeam;
     const isDefender =
       makerTeam !== null && playerTeam(playerId) !== makerTeam;
-    if (isDefender && winners.some((c) => effectiveSuit(c, trump) === trump)) {
+
+    let pool = winners;
+    const safe = filterSafeWinners(
+      winners,
+      trump,
+      leadSuit,
+      played,
+      myHand,
+      opponentsStill
+    );
+    if (safe.length > 0) {
+      pool = safe;
+    } else if (opponentsStill.length > 0) {
+      return sloughLowest(legal, trump, leadSuit, winners);
+    }
+
+    if (isDefender && pool.some((c) => effectiveSuit(c, trump) === trump)) {
       return sortByStrength(
-        winners.filter((c) => effectiveSuit(c, trump) === trump),
+        pool.filter((c) => effectiveSuit(c, trump) === trump),
         trump,
         leadSuit,
         true
       )[0];
     }
-    return sortByStrength(winners, trump, leadSuit, true)[0];
+    return sortByStrength(pool, trump, leadSuit, true)[0];
   }
 
-  return sortByStrength(legal, trump, leadSuit, true)[0];
+  return sloughLowest(legal, trump, leadSuit);
 }
 
 export function pickExpertPlay(state: GameState, playerId: number): Card {
@@ -429,3 +470,13 @@ export function applyDifficultyToNameTrump(
   }
   return pick;
 }
+
+export {
+  allEffectiveTrumpCards,
+  anyUnaccountedTrump,
+  couldOpponentsStillBeat,
+  filterSafeWinners,
+  gatherPlayedCards,
+  isBossTrump,
+  opponentsStillToAct,
+} from './aiPlayMemory';

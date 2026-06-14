@@ -13,3 +13,4 @@ export * from './reducer';
 export * from './ai';
 export * from './aiDifficulty';
 export * from './aiStrategy';
+export * from './aiPlayMemory';

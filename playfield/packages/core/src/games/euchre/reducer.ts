@@ -80,6 +80,7 @@ function dealNewHand(state: GameState): GameState {
       goAlone: false,
       lonerId: null,
       currentTrick: [],
+      cardsPlayed: [],
       leadSuit: null,
       tricksWon: { 0: 0, 1: 0 },
       phase: 'bidding',
@@ -121,6 +122,7 @@ function startGame(seats: SeatConfig[], aiDifficulty = DEFAULT_EUCHRE_AI_DIFFICU
     goAlone: false,
     lonerId: null,
     currentTrick: [],
+    cardsPlayed: [],
     leadSuit: null,
     tricksWon: { 0: 0, 1: 0 },
     score: { 0: 0, 1: 0 },
@@ -281,10 +283,15 @@ function completeTrick(state: GameState): GameState {
   const winningPlay = trickLeader(state.currentTrick, state.trump, state.leadSuit);
   const team = playerTeam(winnerId);
   const tricksWon = { ...state.tricksWon, [team]: state.tricksWon[team] + 1 };
+  const cardsPlayed = [
+    ...state.cardsPlayed,
+    ...state.currentTrick.map((p) => p.card),
+  ];
   let next = appendLog(
     {
       ...state,
       tricksWon,
+      cardsPlayed,
       currentTrick: [],
       leadSuit: null,
       currentPlayer: winnerId,
@@ -408,6 +415,7 @@ export const initialGameState: GameState = {
   goAlone: false,
   lonerId: null,
   currentTrick: [],
+  cardsPlayed: [],
   leadSuit: null,
   tricksWon: { 0: 0, 1: 0 },
   score: { 0: 0, 1: 0 },
@@ -443,7 +451,11 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         i === state.dealerId ? { ...p, cards } : p
       );
       return appendLog(
-        startPlayingAfterDiscard({ ...state, players }),
+        startPlayingAfterDiscard({
+          ...state,
+          players,
+          cardsPlayed: [...state.cardsPlayed, action.card],
+        }),
         log(
           `${playerName(state, state.dealerId)} discards ${formatCardForLog(action.card, state.trump)}`,
           'info'
